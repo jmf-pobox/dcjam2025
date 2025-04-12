@@ -10,33 +10,69 @@ GitHub Repository: https://github.com/jmf-pobox/dcjam2025
 - Open in Godot 4.4.1 Engine to run the game
 - The main scene is `res://scenes/ui/main_menu.tscn`
 - Launch game from the Godot editor with F5
+- Run `dungeon_visualizer.py` to create ASCII visualizations of dungeon layouts
 
-### Recent Changes
-- Fixed camera position consistency between initial position and after movement
-- Fixed control mapping to match user expectations:
-  - Inverted forward/backward movement behavior
-  - Inverted left/right turning behavior
-- Implemented buffer zone to prevent player from walking into walls
-- Player movement is restricted to grid positions (1,1) to (2,2) within the 4x4 room
+### Recent Features
+- Animated torch system with dynamic lighting
+- Room-specific textures and materials
+- JSON-based dungeon layout system
+- Audio management with background music
+- Wall height adjusted to 2.0 units for better atmosphere
+- Special lighting effects for different room types
 
-### Active Files
+### Active Files and Their Purpose
 
-#### Scripts
-- `scripts/player/fp_player.gd` - First-person grid-based player controller
-- `scripts/utils/dungeon_generator3d.gd` - 3D dungeon generator
+#### Core Scripts
 - `scripts/global/autoload.gd` - Game manager (singleton)
+  - Handles audio, game state, saving/loading
+  - Sets up and manages audio buses and background music
+  - Contains global utility functions
 
-#### Scenes
+- `scripts/player/fp_player.gd` - First-person grid-based player controller
+  - Handles grid-based movement and rotation
+  - Controls camera and player positioning
+  - Processes player input and handles collisions
+
+- `scripts/utils/dungeon_generator3d.gd` - 3D dungeon generator
+  - Generates 3D environments from grid data
+  - Places and configures walls, floors, ceilings
+  - Handles material assignments and texturing
+  - Manages torch placement and lighting
+  - Creates room-specific visual styles
+
+- `scripts/utils/dungeon_loader.gd` - Dungeon definition loader
+  - Parses JSON dungeon layouts
+  - Converts JSON data to game structures
+  - Handles room, corridor, and entity creation
+
+- `scripts/objects/torch.gd` - Torch behavior script
+  - Controls torch animation from sprite sheet
+  - Manages flickering light effect
+  - Configures light properties based on room type
+
+#### Key Scenes
 - `scenes/levels/fp_dungeon.tscn` - First-person dungeon level
-- `scenes/ui/main_menu.tscn` and `main_menu.gd` - Main menu
-- `scenes/ui/game_over.tscn` - Game over screen
-- `scenes/ui/options_menu.tscn` - Options menu
-- `scenes/ui/pause_menu.tscn` - Pause menu
+  - Main 3D gameplay environment
+  - Contains player, dungeon generator, and game logic
 
-#### Resources
-- `resources/ceiling_material.tres` - Ceiling material
-- `resources/floor_material.tres` - Floor material
-- `resources/wall_material.tres` - Wall material
+- `scenes/ui/main_menu.tscn` and `main_menu.gd` - Main menu
+  - Game entry point
+  - Options for starting game, adjusting settings, and quitting
+
+- `scenes/objects/torch.tscn` - Torch object scene
+  - Animated torch with dynamic lighting
+  - Configurable properties for different environments
+
+#### Resource Files
+- `resources/dungeons/level_1.json` - Main level definition
+  - Contains rooms, corridors, doors, and entity definitions
+  - Structured for procedural dungeon generation
+
+- Material resources:
+  - `resources/floor_material.tres`, `floor_material_alt.tres`, `floor_material_boss.tres`
+  - `resources/wall_material.tres`, `wall_material_alt.tres`, `wall_material_boss.tres`
+  - `resources/ceiling_material.tres`
+  - Each configures textures and properties for different room types
 
 ### Code Style
 - Use GDScript for all game logic
@@ -50,12 +86,27 @@ GitHub Repository: https://github.com/jmf-pobox/dcjam2025
 
 ### Architecture Notes
 - First-person perspective with grid-based movement (90-degree turns only)
-- 4x4 grid room with walls, floor, and ceiling
-- Player can only move within a 2x2 area (positions 1,1 to 2,2) with a one-cell buffer from all walls
+- JSON-based procedural dungeon generation
+- Material system for room-specific styling
+- Dynamic lighting with animated torches
+- Player can only move within a 2x2 area (positions 1,1 to 2,2) with a one-cell buffer from walls
 - Player starts at grid position (1,1)
 - Use the singleton pattern via Godot's autoload for global state (GameManager)
 - Scene composition over inheritance where possible
 - Connect signals to handle inter-node communication
+
+### JSON Dungeon Format
+- `dungeon_name`: String name of the dungeon
+- `grid_size`: [width, height] array defining the total grid dimensions
+- `cell_size`: Size of each grid cell in 3D units
+- `rooms`: Array of room objects with:
+  - `id`: Unique identifier
+  - `position`: [x, y] grid coordinates
+  - `size`: [width, height] in grid cells
+  - `type`: Room type (entrance, hallway, treasure, boss, etc.)
+  - `doors`: Array of door objects
+- `corridors`: Array of corridor objects connecting rooms
+- `entities`: Array of entities to spawn in the dungeon
 
 ### Controls (First-Person Perspective)
 - W/Up Arrow: Move in the OPPOSITE direction you're facing
@@ -71,3 +122,9 @@ Note: The controls were inverted to match user expectations, so the actual movem
 - East: Positive X direction (90 degrees)
 - South: Negative Z direction (180 degrees)
 - West: Negative X direction (270 degrees)
+
+### Room Types and Material Mappings
+- Entrance rooms: Standard floor, standard walls
+- Hallway rooms: Alternate floor, standard walls
+- Treasure rooms: Alternate floor, alternate walls
+- Boss rooms: Special boss floor, special boss walls with reddish lighting

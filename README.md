@@ -1,24 +1,25 @@
 # Dungeon Crawler - dcjam2025
 
-A simple dungeon crawler game made with Godot Engine 4.4.1.
+A grid-based 3D dungeon crawler game made with Godot Engine 4.4.1.
 
 GitHub Repository: https://github.com/jmf-pobox/dcjam2025
 
 ## Overview
 
-This game started as a 2D dungeon crawler but has evolved into a 3D first-person, grid-based dungeon crawler where the player navigates through a dungeon room, fights enemies, and collects items.
+This is a first-person, grid-based dungeon crawler where the player navigates through procedurally generated dungeons, fights enemies, collects items, and tries to reach the exit. The game features a 3D environment with textured walls, animated torches, and dynamic lighting.
 
 ## Features
 
 - First-person 3D grid-based movement
-- Dungeon room with 4x4 grid layout
+- JSON-based procedural dungeon generation
+- Room-specific textures and lighting
+- Animated torches with dynamic lighting
 - Grid-based combat system
 - Cardinal direction-based navigation
-- Buffer zone to prevent walking into walls
-- Player movement restricted to central 2x2 grid area
 - Various enemy types with different behaviors
 - Collectible items and equipment
 - Simple inventory system
+- Background music with volume controls
 
 ## Controls (First-Person Perspective)
 
@@ -32,13 +33,14 @@ This game started as a 2D dungeon crawler but has evolved into a 3D first-person
 
 Note: The controls have been adjusted to match user expectations.
 
-## Recent Changes
+## Recent Features Added
 
-- Fixed camera position consistency between initial position and after movement
-- Fixed control mapping to match user expectations
-- Implemented buffer zone to prevent player from walking into walls
-- Player movement is restricted to grid positions (1,1) to (2,2) within the 4x4 room
-- Converted from top-down 2D view to first-person 3D perspective
+- Animated torches that cast dynamic light throughout the dungeon
+- Room-specific textures for walls, floors, and ceilings
+- Special lighting for different room types (boss rooms, treasure rooms, etc.)
+- Taller walls for a more spacious dungeon feel
+- JSON-based dungeon definition for easy level creation
+- Audio system with background music and volume controls
 
 ## Getting Started
 
@@ -48,36 +50,66 @@ Note: The controls have been adjusted to match user expectations.
 
 ## Project Structure
 
-- `assets/`: Contains all game assets (sprites, audio, etc.)
+### Key Directories
+- `assets/`: Contains all game assets
+  - `audio/music/`: Background music files
+  - `audio/sfx/`: Sound effects
+  - `sprites/`: Sprite sheets, including torch animations
+  - `textures/`: Wall, floor, and ceiling textures
+- `resources/`: Contains material definitions and other resources
+  - `dungeons/`: JSON dungeon definitions
 - `scenes/`: Contains all game scenes
   - `player/`: Player-related scenes
   - `enemies/`: Enemy-related scenes
   - `levels/`: Game level scenes
+  - `objects/`: Objects like torches, doors, etc.
   - `ui/`: User interface scenes
 - `scripts/`: Contains all GDScript files
   - `player/`: Player-related scripts
   - `enemies/`: Enemy-related scripts
   - `items/`: Item-related scripts
-  - `utils/`: Utility scripts
+  - `global/`: Global singleton scripts
+  - `objects/`: Object behavior scripts
+  - `utils/`: Utility scripts including dungeon generation
 
-## Active Files
+### Key Files and Their Functions
 
-The files that are currently actively being used for the first-person dungeon crawler are:
+#### Core Game Scripts
+- `scripts/global/autoload.gd`: The game manager singleton that handles global state, audio, and game flow
+- `scripts/player/fp_player.gd`: First-person player controller with grid-based movement and rotation
+- `scripts/utils/dungeon_generator3d.gd`: 3D dungeon generation from grid data, including walls, floors, and torches
+- `scripts/utils/dungeon_loader.gd`: Loads and parses JSON dungeon definitions
+- `scripts/objects/torch.gd`: Handles torch animation and dynamic lighting
 
-  1. Scripts:
-	- scripts/player/fp_player.gd - First-person player controller
-	- scripts/utils/dungeon_generator3d.gd - 3D dungeon generator
-	- scripts/global/autoload.gd - Game manager (singleton)
-  2. Scenes:
-	- scenes/levels/fp_dungeon.tscn - First-person dungeon level
-	- scenes/ui/main_menu.tscn and main_menu.gd - Main menu
-	- scenes/ui/game_over.tscn - Game over screen
-	- scenes/ui/options_menu.tscn - Options menu
-	- scenes/ui/pause_menu.tscn - Pause menu
-  3. Resources:
-	- resources/ceiling_material.tres - Ceiling material
-	- resources/floor_material.tres - Floor material
-	- resources/wall_material.tres - Wall material
+#### Important Scenes
+- `scenes/levels/fp_dungeon.tscn`: Main 3D dungeon level scene
+- `scenes/ui/main_menu.tscn`: Game start menu with options
+- `scenes/objects/torch.tscn`: Animated torch object that provides light
+
+#### Resource Files
+- `resources/dungeons/level_1.json`: JSON definition of the first level's layout
+- `resources/floor_material.tres`, `wall_material.tres`, etc.: Material definitions for dungeon surfaces
+- Various specialized materials for different room types (_boss, _alt, etc.)
+
+## Modifying the Game
+
+### To Modify Dungeon Layout
+1. Edit or create JSON files in `resources/dungeons/`
+2. Follow the format with rooms, doors, corridors, and entities
+3. Visualize layouts using `dungeon_visualizer.py` script
+
+### To Change Materials and Textures
+1. Replace texture files in `assets/textures/`
+2. Edit material properties in resource files like `resources/wall_material.tres`
+3. Modify material mappings in `scripts/utils/dungeon_generator3d.gd`
+
+### To Modify Torch Properties
+1. Edit `scripts/objects/torch.gd` to change animation speed, light properties, etc.
+2. Adjust torch placement logic in `dungeon_generator3d.gd`
+
+### To Modify Game Audio
+1. Replace audio files in the `assets/audio/` directory
+2. Edit `scripts/global/autoload.gd` to adjust audio settings and playback
 
 ## License
 
