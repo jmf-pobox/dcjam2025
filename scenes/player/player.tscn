@@ -1,6 +1,6 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=9 format=3 uid="uid://dqlloid8nj7y3"]
 
-[ext_resource type="Script" path="res://scripts/player/player.gd" id="1_xoywl"]
+[ext_resource type="Script" uid="uid://cv74dbfvylphv" path="res://scripts/player/player.gd" id="1_xoywl"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_j42gb"]
 radius = 16.0
@@ -92,11 +92,11 @@ tracks/0/keys = {
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_x6ykg"]
 _data = {
-"idle": SubResource("Animation_dfv4o"),
-"walk_down": SubResource("Animation_b6gfe"),
-"walk_left": SubResource("Animation_ij42h"),
-"walk_right": SubResource("Animation_nlvnw"),
-"walk_up": SubResource("Animation_1gnow")
+&"idle": SubResource("Animation_dfv4o"),
+&"walk_down": SubResource("Animation_b6gfe"),
+&"walk_left": SubResource("Animation_ij42h"),
+&"walk_right": SubResource("Animation_nlvnw"),
+&"walk_up": SubResource("Animation_1gnow")
 }
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
@@ -125,7 +125,7 @@ color = Color(0.337255, 0.376471, 0.831373, 1)
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
 libraries = {
-"": SubResource("AnimationLibrary_x6ykg")
+&"": SubResource("AnimationLibrary_x6ykg")
 }
 autoplay = "idle"
 

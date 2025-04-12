@@ -1,0 +1,102 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/player/fp_player.gd" id="1_kgde3"]
+[ext_resource type="Script" path="res://scripts/utils/dungeon_generator3d.gd" id="2_mjcyu"]
+[ext_resource type="Script" path="res://scripts/utils/dungeon_visualization.gd" id="3_vis4d"]
+
+[sub_resource type="GDScript" id="GDScript_level"]
+script/source = "extends Node3D
+
+@onready var player = $Player
+@onready var debug_label = $CanvasLayer/DebugInfo
+
+func _ready():
+	# Generate the dungeon
+	DungeonGenerator3D.generate_dungeon(self)
+	
+	# Add grid visualization for debugging (comment out in production)
+	load(\"res://scripts/utils/dungeon_visualization.gd\").create_grid_visualization(self)
+	
+	# Position the player at grid position (1,1)
+	player.grid_position = Vector2i(1, 1)
+	player.position = Vector3(
+		player.grid_position.x * DungeonGenerator3D.CELL_SIZE + DungeonGenerator3D.CELL_SIZE / 2, 
+		0.5, 
+		player.grid_position.y * DungeonGenerator3D.CELL_SIZE + DungeonGenerator3D.CELL_SIZE / 2
+	)
+	
+	# Debug info
+	print(\"Dungeon generated with walkable area from (1,1) to (2,2)\")
+	print(\"Player positioned at: \", player.position, \" grid pos: \", player.grid_position)
+"
+
+[sub_resource type="GDScript" id="GDScript_debug"]
+script/source = "extends Label
+
+@onready var player = $\"../../Player\"
+
+func _process(_delta):
+	text = \"Grid Position: (%d, %d)\\nFacing: %s\" % [player.grid_position.x, player.grid_position.y, _cardinal_to_string(player.facing_cardinal)]
+
+func _cardinal_to_string(dir: int) -> String:
+	match dir:
+		0: return \"North\"
+		1: return \"East\"
+		2: return \"South\"
+		3: return \"West\"
+	return \"Unknown\"
+"
+
+[sub_resource type="GDScript" id="GDScript_pause"]
+script/source = "extends Node
+
+# Handle pausing the game
+func _input(event):
+	if event.is_action_pressed(\"pause\"):
+		var pause_menu = load(\"res://scenes/ui/pause_menu.tscn\").instantiate()
+		get_tree().root.add_child(pause_menu)
+"
+
+[node name="FPDungeon" type="Node3D"]
+script = SubResource("GDScript_level")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, -0.75, 0.433013, 0, 5, 0)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0.8, 4)
+light_color = Color(0.933333, 0.858824, 0.741176, 1)
+light_energy = 0.8
+shadow_enabled = true
+omni_range = 10.0
+
+[node name="Player" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0.5, 3)
+script = ExtResource("1_kgde3")
+
+[node name="Camera3D" type="Camera3D" parent="Player"]
+current = true
+fov = 70.0
+
+[node name="RayCast3D" type="RayCast3D" parent="Player"]
+target_position = Vector3(0, 0, -2)
+collision_mask = 2
+collide_with_areas = true
+debug_shape_thickness = 5
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="DebugInfo" type="Label" parent="CanvasLayer"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 220.0
+offset_bottom = 70.0
+text = "Grid Position: (1, 1)
+Facing: South"
+script = SubResource("GDScript_debug")
+
+[node name="PauseHandler" type="Node" parent="."]
+process_mode = 3
+script = SubResource("GDScript_pause")

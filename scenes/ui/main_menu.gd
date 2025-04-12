@@ -10,8 +10,8 @@ func _on_options_menu_closed():
 	pass
 
 func _on_start_button_pressed():
-	# Start new game
-	get_tree().change_scene_to_file("res://scenes/levels/level_1.tscn")
+	# Start new game (first-person dungeon)
+	get_tree().change_scene_to_file("res://scenes/levels/fp_dungeon.tscn")
 
 func _on_load_button_pressed():
 	# Load saved game
