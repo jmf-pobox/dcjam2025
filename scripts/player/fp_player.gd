@@ -143,7 +143,8 @@ func turn_left():
 		
 	current_action = Action.TURN_LEFT
 	var new_cardinal = _get_right_cardinal()  # Changed to right cardinal
-	facing_cardinal = new_cardinal  # Cardinal direction is already an integer
+	# Explicitly cast to the Cardinal enum type
+	facing_cardinal = Cardinal.values()[new_cardinal]
 	_update_target_rotation()
 	is_turning = true
 	_debug_print("Turning left (now clockwise) to face: %s" % _cardinal_to_string(facing_cardinal))

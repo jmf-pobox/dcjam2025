@@ -2,25 +2,43 @@
 
 A simple dungeon crawler game made with Godot Engine 4.4.1.
 
+GitHub Repository: https://github.com/jmf-pobox/dcjam2025
+
 ## Overview
 
-This is a 2D dungeon crawler where the player navigates through procedurally generated dungeons, fights enemies, collects items, and tries to reach the exit.
+This game started as a 2D dungeon crawler but has evolved into a 3D first-person, grid-based dungeon crawler where the player navigates through a dungeon room, fights enemies, and collects items.
 
 ## Features
 
-- Top-down 2D gameplay
-- Multiple levels with increasing difficulty
+- First-person 3D grid-based movement
+- Dungeon room with 4x4 grid layout
+- Grid-based combat system
+- Cardinal direction-based navigation
+- Buffer zone to prevent walking into walls
+- Player movement restricted to central 2x2 grid area
 - Various enemy types with different behaviors
 - Collectible items and equipment
 - Simple inventory system
-- Game saving/loading
 
-## Controls
+## Controls (First-Person Perspective)
 
-- WASD or Arrow Keys: Move character
+- W/Up Arrow: Move in the OPPOSITE direction you're facing
+- S/Down Arrow: Move in the SAME direction you're facing
+- A/Left Arrow: TURN LEFT (clockwise rotation)
+- D/Right Arrow: TURN RIGHT (counter-clockwise rotation)
 - Left Mouse Button: Attack
 - E: Interact with objects/items
 - ESC: Pause game
+
+Note: The controls have been adjusted to match user expectations.
+
+## Recent Changes
+
+- Fixed camera position consistency between initial position and after movement
+- Fixed control mapping to match user expectations
+- Implemented buffer zone to prevent player from walking into walls
+- Player movement is restricted to grid positions (1,1) to (2,2) within the 4x4 room
+- Converted from top-down 2D view to first-person 3D perspective
 
 ## Getting Started
 

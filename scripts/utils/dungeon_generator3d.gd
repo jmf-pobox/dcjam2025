@@ -6,15 +6,23 @@ class_name DungeonGenerator3D
 const DEFAULT_GRID_WIDTH = 20
 const DEFAULT_GRID_HEIGHT = 20 
 const DEFAULT_CELL_SIZE = 2.0
-const DEFAULT_ROOM_HEIGHT = 1.0
+const DEFAULT_ROOM_HEIGHT = 2.0
 
 # Wall thickness
 const WALL_THICKNESS = 0.2
 
 # Materials (loaded in _ready)
 var floor_material: Material
+var floor_material_alt: Material
+var floor_material_boss: Material
 var ceiling_material: Material
 var wall_material: Material
+var wall_material_alt: Material
+var wall_material_boss: Material
+
+# Material mappings for room types
+var room_floor_materials = {}
+var room_wall_materials = {}
 
 # Grid properties
 var grid_width: int
@@ -149,6 +157,9 @@ func build_dungeon() -> void:
 	# Create walls around all floor cells
 	_create_walls_from_grid()
 	
+	# Add torches to walls
+	_add_torches_to_walls()
+	
 	print("Dungeon built with ", rooms.size(), " rooms and ", corridors.size(), " corridors")
 
 # Load a dungeon from JSON file
@@ -166,8 +177,12 @@ func load_from_json(file_path: String) -> bool:
 func _load_materials() -> void:
 	# Try to load materials from resources first
 	var floor_mat_res = load("res://resources/floor_material.tres")
+	var floor_mat_alt_res = load("res://resources/floor_material_alt.tres")
+	var floor_mat_boss_res = load("res://resources/floor_material_boss.tres")
 	var ceiling_mat_res = load("res://resources/ceiling_material.tres")
 	var wall_mat_res = load("res://resources/wall_material.tres")
+	var wall_mat_alt_res = load("res://resources/wall_material_alt.tres")
+	var wall_mat_boss_res = load("res://resources/wall_material_boss.tres")
 	
 	# Use loaded materials if available, otherwise create new ones
 	if floor_mat_res:
@@ -175,6 +190,16 @@ func _load_materials() -> void:
 	else:
 		floor_material = StandardMaterial3D.new()
 		floor_material.albedo_color = Color(0.3, 0.3, 0.3) # Dark gray
+	
+	if floor_mat_alt_res:
+		floor_material_alt = floor_mat_alt_res
+	else:
+		floor_material_alt = floor_material # Fallback to standard floor
+		
+	if floor_mat_boss_res:
+		floor_material_boss = floor_mat_boss_res
+	else:
+		floor_material_boss = floor_material_alt # Fallback to alt floor
 	
 	if ceiling_mat_res:
 		ceiling_material = ceiling_mat_res
@@ -187,6 +212,32 @@ func _load_materials() -> void:
 	else:
 		wall_material = StandardMaterial3D.new()
 		wall_material.albedo_color = Color(0.6, 0.5, 0.4) # Beige-brown
+		
+	if wall_mat_alt_res:
+		wall_material_alt = wall_mat_alt_res
+	else:
+		wall_material_alt = wall_material # Fallback to standard wall
+		
+	if wall_mat_boss_res:
+		wall_material_boss = wall_mat_boss_res
+	else:
+		wall_material_boss = wall_material_alt # Fallback to alt wall
+	
+	# Setup room type material mappings
+	# Default for all rooms
+	room_floor_materials["default"] = floor_material
+	room_wall_materials["default"] = wall_material
+	
+	# Special room types
+	room_floor_materials["entrance"] = floor_material
+	room_floor_materials["hallway"] = floor_material_alt
+	room_floor_materials["treasure"] = floor_material_alt
+	room_floor_materials["boss"] = floor_material_boss
+	
+	room_wall_materials["entrance"] = wall_material
+	room_wall_materials["hallway"] = wall_material
+	room_wall_materials["treasure"] = wall_material_alt
+	room_wall_materials["boss"] = wall_material_boss
 
 # Create floor and ceiling for the entire occupied grid area
 func _create_floor_and_ceiling() -> void:
@@ -228,7 +279,13 @@ func _create_floor_and_ceiling() -> void:
 			(position.y + size.y / 2.0) * cell_size
 		)
 		
-		floor_instance.set_surface_override_material(0, floor_material)
+		# Use room-specific floor material if defined
+		var room_type = room["type"]
+		var floor_mat = room_floor_materials.get("default", floor_material)
+		if room_floor_materials.has(room_type):
+			floor_mat = room_floor_materials[room_type]
+			
+		floor_instance.set_surface_override_material(0, floor_mat)
 		dungeon_node.add_child(floor_instance)
 		
 		# Create ceiling for this room
@@ -412,7 +469,29 @@ func _create_wall_segment(position: Vector3, orientation: String, length: float,
 		wall_pos.x -= WALL_THICKNESS / 2
 	
 	wall_instance.position = wall_pos
-	wall_instance.set_surface_override_material(0, wall_material)
+	
+	# Use room-specific wall material if position is within a room
+	var wall_mat = wall_material
+	
+	# Find which room this wall belongs to
+	for room_id in rooms:
+		var room = rooms[room_id]
+		var room_pos = room["position"]
+		var room_size = room["size"]
+		var room_type = room["type"]
+		
+		# Check if wall position is within room bounds
+		var wall_grid_x = int(position.x / cell_size)
+		var wall_grid_y = int(position.z / cell_size)
+		
+		if wall_grid_x >= room_pos.x and wall_grid_x <= room_pos.x + room_size.x and \
+		   wall_grid_y >= room_pos.y and wall_grid_y <= room_pos.y + room_size.y:
+			# This wall belongs to this room
+			if room_wall_materials.has(room_type):
+				wall_mat = room_wall_materials[room_type]
+			break
+	
+	wall_instance.set_surface_override_material(0, wall_mat)
 	
 	# Skip walls at door positions
 	var is_door = false
@@ -507,3 +586,229 @@ func _ensure_door_passage(door_pos: Vector2i, door_dir: String) -> void:
 					grid[x][y] = 1
 		
 		print("Ensuring door passage at ", door_pos, " direction ", door_dir, " and neighbor ", neighbor_pos)
+
+# Add torches to walls at regular intervals
+func _add_torches_to_walls() -> void:
+	# Load the torch scene
+	var torch_scene = load("res://scenes/objects/torch.tscn")
+	if not torch_scene:
+		printerr("Failed to load torch scene")
+		return
+	
+	# Create a node to hold all torches
+	var torches_node = Node3D.new()
+	torches_node.name = "Torches"
+	dungeon_node.add_child(torches_node)
+	
+	# Torch placement settings
+	var torch_height = room_height * cell_size * 0.7  # Place at 70% of wall height
+	
+	# Keep track of wall segments with torches to avoid duplicates
+	var torch_positions = {}
+	
+	# Track door positions to avoid placing torches at doors
+	var door_positions = {}
+	for door in doors:
+		door_positions[door["position"]] = door["direction"]
+	
+	# First, let's build a map of valid wall positions
+	var wall_positions = {}  # Dictionary to track wall positions and their directions
+	
+	# For each floor cell in the grid, check adjacent cells
+	for x in range(grid_width):
+		for y in range(grid_height):
+			if grid[x][y] == 1:  # If this is a floor cell
+				# Check each adjacent cell for walls
+				
+				# North (y-1)
+				if y == 0 or grid[x][y-1] == 0:
+					wall_positions[Vector2i(x, y)] = "N"
+				
+				# South (y+1)
+				if y == grid_height-1 or grid[x][y+1] == 0:
+					wall_positions[Vector2i(x, y+1)] = "S"
+				
+				# East (x+1)
+				if x == grid_width-1 or grid[x+1][y] == 0:
+					wall_positions[Vector2i(x+1, y)] = "E"
+				
+				# West (x-1)
+				if x == 0 or grid[x-1][y] == 0:
+					wall_positions[Vector2i(x, y)] = "W"
+	
+	# Now place torches only on actual walls
+	for pos in wall_positions:
+		var x = pos.x
+		var y = pos.y
+		var wall_dir = wall_positions[pos]
+		
+		# Only place at valid intervals and not at doors
+		if _should_place_torch(x, y, torch_positions, 0) and not _is_door_position(pos, wall_dir, door_positions):
+			# Find which room this wall belongs to
+			var room_type = "default"
+			for room_id in rooms:
+				var room = rooms[room_id]
+				var room_pos = room["position"]
+				var room_size = room["size"]
+				
+				# Check if position is on the boundary of this room
+				var is_on_room = false
+				
+				if wall_dir == "N" and y == room_pos.y and x >= room_pos.x and x < room_pos.x + room_size.x:
+					is_on_room = true
+				elif wall_dir == "S" and y == room_pos.y + room_size.y and x >= room_pos.x and x < room_pos.x + room_size.x:
+					is_on_room = true
+				elif wall_dir == "E" and x == room_pos.x + room_size.x and y >= room_pos.y and y < room_pos.y + room_size.y:
+					is_on_room = true
+				elif wall_dir == "W" and x == room_pos.x and y >= room_pos.y and y < room_pos.y + room_size.y:
+					is_on_room = true
+				
+				if is_on_room:
+					room_type = room["type"]
+					break
+					
+			# Place the torch on this wall
+			_place_torch(torch_scene, torches_node, x, y, wall_dir, torch_height, room_type)
+			torch_positions[Vector2(x, y)] = true
+	
+	# Place torches next to doors (but not at door positions)
+	for door in doors:
+		var door_pos = door["position"]
+		var door_dir = door["direction"]
+		
+		# Find the room this door belongs to
+		var room_type = "default"
+		var door_room_id = door.get("room_id", "")
+		if door_room_id != "" and rooms.has(door_room_id):
+			room_type = rooms[door_room_id]["type"]
+		else:
+			# Try to find the room by checking if the door position is on a room boundary
+			for room_id in rooms:
+				var room = rooms[room_id]
+				var room_pos = room["position"]
+				var room_size = room["size"]
+				
+				# Check if door is on this room's boundary
+				if (door_dir == "N" and door_pos.y == room_pos.y and 
+					door_pos.x >= room_pos.x and door_pos.x < room_pos.x + room_size.x) or \
+				   (door_dir == "S" and door_pos.y == room_pos.y + room_size.y and 
+					door_pos.x >= room_pos.x and door_pos.x < room_pos.x + room_size.x) or \
+				   (door_dir == "E" and door_pos.x == room_pos.x + room_size.x and 
+					door_pos.y >= room_pos.y and door_pos.y < room_pos.y + room_size.y) or \
+				   (door_dir == "W" and door_pos.x == room_pos.x and 
+					door_pos.y >= room_pos.y and door_pos.y < room_pos.y + room_size.y):
+					room_type = room["type"]
+					break
+		
+		# Place torches 1 cell to the sides of the door
+		var torch_offset = 1
+		
+		# For North/South doors, place torches to the left and right
+		if door_dir in ["N", "S"]:
+			var left_pos = Vector2i(door_pos.x - torch_offset, door_pos.y)
+			var right_pos = Vector2i(door_pos.x + torch_offset, door_pos.y)
+			
+			# Check if these positions are valid walls
+			if wall_positions.has(left_pos) and wall_positions[left_pos] == door_dir:
+				_place_torch(torch_scene, torches_node, left_pos.x, left_pos.y, door_dir, torch_height, room_type)
+				torch_positions[Vector2(left_pos.x, left_pos.y)] = true
+			
+			if wall_positions.has(right_pos) and wall_positions[right_pos] == door_dir:
+				_place_torch(torch_scene, torches_node, right_pos.x, right_pos.y, door_dir, torch_height, room_type)
+				torch_positions[Vector2(right_pos.x, right_pos.y)] = true
+		else: # East/West doors
+			var top_pos = Vector2i(door_pos.x, door_pos.y - torch_offset)
+			var bottom_pos = Vector2i(door_pos.x, door_pos.y + torch_offset)
+			
+			# Check if these positions are valid walls
+			if wall_positions.has(top_pos) and wall_positions[top_pos] == door_dir:
+				_place_torch(torch_scene, torches_node, top_pos.x, top_pos.y, door_dir, torch_height, room_type)
+				torch_positions[Vector2(top_pos.x, top_pos.y)] = true
+			
+			if wall_positions.has(bottom_pos) and wall_positions[bottom_pos] == door_dir:
+				_place_torch(torch_scene, torches_node, bottom_pos.x, bottom_pos.y, door_dir, torch_height, room_type)
+				torch_positions[Vector2(bottom_pos.x, bottom_pos.y)] = true
+	
+	print("Added torches to the dungeon walls with regular spacing")
+
+# Helper to check if a position is a door
+func _is_door_position(pos: Vector2i, wall_dir: String, door_positions: Dictionary) -> bool:
+	if not door_positions.has(pos):
+		return false
+		
+	# Make sure the door direction matches the wall we're checking
+	var door_dir = door_positions[pos]
+	return door_dir == wall_dir
+
+# Helper function to determine if a torch should be placed at a given location
+func _should_place_torch(x: int, y: int, torch_positions: Dictionary, spacing: int) -> bool:
+	# Skip if we already have a torch at this position
+	if torch_positions.has(Vector2(x, y)):
+		return false
+	
+	# Check if we're near another torch - we want one every 2 cells
+	for offset_x in range(-2, 3):
+		for offset_y in range(-2, 3):
+			var check_pos = Vector2(x + offset_x, y + offset_y)
+			if torch_positions.has(check_pos) and check_pos != Vector2(x, y):
+				return false
+	
+	# Check if position is divisible by 2 to create regular pattern
+	# This ensures torches appear every 2 cells along walls
+	return (x % 2 == 0 and y % 2 == 0)
+
+# Helper function to place a torch on a wall
+func _place_torch(torch_scene, parent_node: Node3D, grid_x: int, grid_y: int, 
+				 wall_dir: String, height: float, room_type: String) -> void:
+	# Instance the torch scene
+	var torch_instance = torch_scene.instantiate()
+	torch_instance.name = "Torch_" + str(grid_x) + "_" + str(grid_y)
+	
+	# Adjust light properties based on room type
+	if room_type == "boss":
+		torch_instance.light_color = Color(1.0, 0.5, 0.2, 1.0)  # More red/orange
+		torch_instance.light_energy = 2.0  # Brighter
+	elif room_type == "treasure":
+		torch_instance.light_color = Color(0.9, 0.9, 0.2, 1.0)  # Golden
+		torch_instance.light_energy = 1.8
+	
+	# Position the torch on the wall
+	var wall_pos = Vector3.ZERO
+	var torch_rotation = 0.0
+	
+	# Position the torch based on wall direction
+	match wall_dir:
+		"N": # North wall
+			wall_pos = Vector3(
+				(grid_x * cell_size) + (cell_size / 2),
+				height,
+				grid_y * cell_size + WALL_THICKNESS/2
+			)
+			torch_rotation = PI  # Rotate to face south
+		"S": # South wall
+			wall_pos = Vector3(
+				(grid_x * cell_size) + (cell_size / 2),
+				height,
+				grid_y * cell_size - WALL_THICKNESS/2
+			)
+			torch_rotation = 0  # Facing north
+		"E": # East wall
+			wall_pos = Vector3(
+				grid_x * cell_size - WALL_THICKNESS/2,
+				height,
+				(grid_y * cell_size) + (cell_size / 2)
+			)
+			torch_rotation = PI * 1.5  # Facing west
+		"W": # West wall
+			wall_pos = Vector3(
+				grid_x * cell_size + WALL_THICKNESS/2,
+				height,
+				(grid_y * cell_size) + (cell_size / 2)
+			)
+			torch_rotation = PI * 0.5  # Facing east
+	
+	torch_instance.position = wall_pos
+	torch_instance.rotation.y = torch_rotation
+	
+	# Add the torch to the parent node
+	parent_node.add_child(torch_instance)
