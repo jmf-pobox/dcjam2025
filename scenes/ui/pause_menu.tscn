@@ -1,0 +1,147 @@
+[gd_scene load_steps=4 format=3]
+
+[sub_resource type="GDScript" id="GDScript_3r8h7"]
+script/source = "extends CanvasLayer
+
+signal resume_game
+signal return_to_main_menu
+signal quit_game
+
+# Called when the pause menu appears
+func _ready():
+	# Pause the game
+	get_tree().paused = true
+	# Make sure this node process even when game is paused
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	
+	print(\"Pause menu created and visible\")
+
+# Handle input
+func _input(event):
+	if event.is_action_pressed(\"pause\"):
+		_on_resume_button_pressed()
+
+func _on_resume_button_pressed():
+	print(\"Resume button pressed\")
+	get_tree().paused = false
+	emit_signal(\"resume_game\")
+	queue_free()
+
+func _on_main_menu_button_pressed():
+	print(\"Main menu button pressed\")
+	get_tree().paused = false
+	emit_signal(\"return_to_main_menu\")
+	# Save game if needed
+	var game_manager = get_node(\"/root/GameManager\")
+	if game_manager:
+		game_manager.save_game()
+	get_tree().change_scene_to_file(\"res://scenes/ui/main_menu.tscn\")
+
+func _on_quit_button_pressed():
+	print(\"Quit button pressed\")
+	get_tree().paused = false
+	emit_signal(\"quit_game\")
+	# Save game if needed
+	var game_manager = get_node(\"/root/GameManager\")
+	if game_manager:
+		game_manager.save_game()
+	get_tree().quit()
+"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q4t6v"]
+bg_color = Color(0.137255, 0.101961, 0.227451, 0.862745)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.364706, 0.282353, 0.635294, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="LabelSettings" id="LabelSettings_mj7p5"]
+font_size = 24
+font_color = Color(0.941176, 0.941176, 0.941176, 1)
+shadow_size = 2
+shadow_color = Color(0, 0, 0, 0.337255)
+
+[node name="PauseMenu" type="CanvasLayer"]
+process_mode = 3
+layer = 100
+script = SubResource("GDScript_3r8h7")
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BackgroundDim" type="ColorRect" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.392157)
+
+[node name="CenterContainer" type="CenterContainer" parent="Control"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="Control/CenterContainer"]
+custom_minimum_size = Vector2(250, 250)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_q4t6v")
+
+[node name="MarginContainer" type="MarginContainer" parent="Control/CenterContainer/PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Control/CenterContainer/PanelContainer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Title" type="Label" parent="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "GAME PAUSED"
+label_settings = SubResource("LabelSettings_mj7p5")
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ResumeButton" type="Button" parent="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+text = "Resume Game"
+
+[node name="SaveButton" type="Button" parent="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+text = "Save Game"
+
+[node name="MainMenuButton" type="Button" parent="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+text = "Main Menu"
+
+[node name="QuitButton" type="Button" parent="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+text = "Quit Game"
+
+[connection signal="pressed" from="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/ResumeButton" to="." method="_on_resume_button_pressed"]
+[connection signal="pressed" from="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/SaveButton" to="." method="_on_main_menu_button_pressed"]
+[connection signal="pressed" from="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/MainMenuButton" to="." method="_on_main_menu_button_pressed"]
+[connection signal="pressed" from="Control/CenterContainer/PanelContainer/MarginContainer/VBoxContainer/QuitButton" to="." method="_on_quit_button_pressed"]
