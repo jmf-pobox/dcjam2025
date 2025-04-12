@@ -9,31 +9,24 @@ signal options_closed
 @onready var sfx_slider = $PanelContainer/MarginContainer/VBoxContainer/SFXVolume/HSlider
 
 func _ready():
-	# Load current settings
-	# These would normally come from a settings singleton
-	music_slider.value = 80
-	sfx_slider.value = 70
+	# Load current settings from the GameManager
+	music_slider.value = GameManager.music_volume * 100
+	sfx_slider.value = GameManager.sfx_volume * 100
 
 func _on_back_button_pressed():
 	# Save settings before closing
-	# In a real implementation, we would save these to a settings file
-	# var settings = {
-	#    \"music_volume\": music_slider.value,
-	#    \"sfx_volume\": sfx_slider.value
-	# }
+	GameManager.save_game()
 	
 	emit_signal(\"options_closed\")
 	queue_free()
 
 func _on_music_slider_value_changed(value):
-	# Update music volume
-	# In a real implementation, we would adjust AudioServer bus volume
-	pass
+	# Update music volume using GameManager
+	GameManager.set_music_volume(value)
 
 func _on_sfx_slider_value_changed(value):
-	# Update sound effects volume
-	# In a real implementation, we would adjust AudioServer bus volume
-	pass
+	# Update sound effects volume using GameManager
+	GameManager.set_sfx_volume(value)
 "
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ofd0n"]

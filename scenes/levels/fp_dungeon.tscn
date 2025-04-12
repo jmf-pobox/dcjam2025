@@ -1,33 +1,65 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3 uid="uid://iyj11aj3t71d"]
 
-[ext_resource type="Script" path="res://scripts/player/fp_player.gd" id="1_kgde3"]
-[ext_resource type="Script" path="res://scripts/utils/dungeon_generator3d.gd" id="2_mjcyu"]
-[ext_resource type="Script" path="res://scripts/utils/dungeon_visualization.gd" id="3_vis4d"]
+[ext_resource type="Script" uid="uid://c32vkfmby6k3e" path="res://scripts/player/fp_player.gd" id="1_kgde3"]
+[ext_resource type="Script" uid="uid://iws0fijjw00g" path="res://scripts/utils/dungeon_generator3d.gd" id="2_dungeon"]
+[ext_resource type="Script" path="res://scripts/utils/debug_json_loader.gd" id="3_debug_json"]
 
 [sub_resource type="GDScript" id="GDScript_level"]
 script/source = "extends Node3D
 
 @onready var player = $Player
 @onready var debug_label = $CanvasLayer/DebugInfo
+@onready var dungeon_generator = $DungeonGenerator3D
+
+# Path to the dungeon JSON file
+const DUNGEON_PATH = \"res://resources/dungeons/level_1.json\"
 
 func _ready():
-	# Generate the dungeon
-	DungeonGenerator3D.generate_dungeon(self)
+	# Wait for dungeon generator to be ready
+	await get_tree().process_frame
+	
+	# Load and generate the dungeon from JSON
+	var success = dungeon_generator.load_from_json(DUNGEON_PATH)
+	
+	if not success:
+		printerr(\"Failed to load dungeon from: \", DUNGEON_PATH)
+		# Fall back to simple dungeon generation if JSON loading fails
+		dungeon_generator.initialize()
+		dungeon_generator.build_dungeon()
 	
 	# Add grid visualization for debugging (comment out in production)
-	load(\"res://scripts/utils/dungeon_visualization.gd\").create_grid_visualization(self)
+	# load(\"res://scripts/utils/dungeon_visualization.gd\").create_grid_visualization(self)
 	
-	# Position the player at grid position (1,1)
-	player.grid_position = Vector2i(1, 1)
+	# Find the entrance room from the dungeon data
+	var entrance_pos = Vector2i(3, 3)  # Default position if no entrance found
+	for room_id in dungeon_generator.rooms:
+		var room = dungeon_generator.rooms[room_id]
+		if room.type == \"entrance\":
+			# Position the player in the center of the entrance room
+			var pos = room.position
+			var size = room.size
+			entrance_pos = Vector2i(pos.x + size.x / 2, pos.y + size.y / 2)
+			break
+	
+	# Position the player at the entrance
+	player.grid_position = entrance_pos
 	player.position = Vector3(
-		player.grid_position.x * DungeonGenerator3D.CELL_SIZE + DungeonGenerator3D.CELL_SIZE / 2, 
+		player.grid_position.x * dungeon_generator.cell_size + dungeon_generator.cell_size / 2, 
 		0.5, 
-		player.grid_position.y * DungeonGenerator3D.CELL_SIZE + DungeonGenerator3D.CELL_SIZE / 2
+		player.grid_position.y * dungeon_generator.cell_size + dungeon_generator.cell_size / 2
 	)
 	
 	# Debug info
-	print(\"Dungeon generated with walkable area from (1,1) to (2,2)\")
+	print(\"Dungeon loaded from JSON: \", DUNGEON_PATH)
 	print(\"Player positioned at: \", player.position, \" grid pos: \", player.grid_position)
+	
+	# Create some debug text that shows up in the game
+	var debug_3d = Label3D.new()
+	debug_3d.text = \"Dungeon loaded: Simple Three Room Path\\nRoom count: \" + str(dungeon_generator.rooms.size())
+	debug_3d.position = Vector3(10, 2, 10)
+	debug_3d.font_size = 24
+	debug_3d.modulate = Color(1, 0, 0) # Red text
+	add_child(debug_3d)
 "
 
 [sub_resource type="GDScript" id="GDScript_debug"]
@@ -71,6 +103,12 @@ light_color = Color(0.933333, 0.858824, 0.741176, 1)
 light_energy = 0.8
 shadow_enabled = true
 omni_range = 10.0
+
+[node name="DungeonGenerator3D" type="Node3D" parent="."]
+script = ExtResource("2_dungeon")
+
+[node name="JsonDebugger" type="Node" parent="."]
+script = ExtResource("3_debug_json")
 
 [node name="Player" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0.5, 3)

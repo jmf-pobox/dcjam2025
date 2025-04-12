@@ -143,7 +143,7 @@ func turn_left():
 		
 	current_action = Action.TURN_LEFT
 	var new_cardinal = _get_right_cardinal()  # Changed to right cardinal
-	facing_cardinal = new_cardinal
+	facing_cardinal = new_cardinal  # Cardinal direction is already an integer
 	_update_target_rotation()
 	is_turning = true
 	_debug_print("Turning left (now clockwise) to face: %s" % _cardinal_to_string(facing_cardinal))
@@ -155,7 +155,7 @@ func turn_right():
 		
 	current_action = Action.TURN_RIGHT
 	var new_cardinal = _get_left_cardinal()  # Changed to left cardinal
-	facing_cardinal = new_cardinal
+	facing_cardinal = new_cardinal  # Cardinal direction is already an integer
 	_update_target_rotation()
 	is_turning = true
 	_debug_print("Turning right (now counter-clockwise) to face: %s" % _cardinal_to_string(facing_cardinal))
@@ -211,8 +211,55 @@ func _can_move_backward() -> bool:
 	return _is_valid_position(new_pos)
 
 func _is_valid_position(pos: Vector2i) -> bool:
-	"""Check if a grid position is within the dungeon bounds, with a one-cell buffer from walls."""
-	return pos.x >= 1 and pos.x <= 2 and pos.y >= 1 and pos.y <= 2
+	"""Check if a grid position is valid for movement (has a floor or is a door)."""
+	# Get reference to the dungeon generator
+	var dungeon_scene = get_tree().current_scene
+	if not dungeon_scene:
+		return false
+		
+	var dungeon_generator = dungeon_scene.get_node("DungeonGenerator3D")
+	if not dungeon_generator:
+		# Fall back to old behavior if no dungeon generator found
+		return pos.x >= 1 and pos.x <= 2 and pos.y >= 1 and pos.y <= 2
+	
+	# Check if this position is within grid bounds
+	if pos.x < 0 or pos.x >= dungeon_generator.grid_width or pos.y < 0 or pos.y >= dungeon_generator.grid_height:
+		return false
+	
+	# Check if this is a floor cell (value 1)
+	var is_walkable = dungeon_generator.grid[pos.x][pos.y] == 1
+	
+	# Enhanced door detection and logging
+	if not is_walkable:
+		for door in dungeon_generator.doors:
+			var door_pos = door["position"]
+			var door_dir = door["direction"]
+			
+			# Check if this is a door position
+			if door_pos.x == pos.x and door_pos.y == pos.y:
+				# This is a door position
+				_debug_print("=== DOOR PASSAGE ===")
+				_debug_print("Door found at position: " + str(pos) + ", direction: " + door_dir)
+				
+				# Calculate movement direction relative to door
+				var move_dir = "Unknown"
+				if current_action == Action.MOVE_FORWARD:
+					move_dir = "Forward (opposite facing)"
+				elif current_action == Action.MOVE_BACKWARD:
+					move_dir = "Backward (same as facing)"
+				
+				_debug_print("Player movement: " + move_dir)
+				_debug_print("Player facing: " + _cardinal_to_string(facing_cardinal))
+				
+				# Log which room we're moving to
+				for room in dungeon_generator.rooms:
+					for r_door in room.get("doors", []):
+						if r_door.get("connects_to") == door.get("connects_to"):
+							_debug_print("Moving to room: " + str(room.get("id")))
+				
+				return true
+	
+	return is_walkable
 
 func _cardinal_to_string(dir: int) -> String:
 	"""Convert cardinal direction to string for debugging."""

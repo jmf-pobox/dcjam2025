@@ -1,0 +1,55 @@
+{
+  "dungeon_name": "Simple Three Room Path",
+  "grid_size": [20, 20],
+  "cell_size": 2,
+  "rooms": [
+	{
+	  "id": "start_room",
+	  "position": [5, 12],
+	  "size": [5, 5],
+	  "type": "entrance",
+	  "doors": [
+		{"direction": "N", "position": [7, 12], "connects_to": "corridor_1"}
+	  ]
+	},
+	{
+	  "id": "middle_room",
+	  "position": [5, 7],
+	  "size": [5, 4],
+	  "type": "hallway",
+	  "doors": [
+		{"direction": "S", "position": [7, 10], "connects_to": "corridor_1"},
+		{"direction": "W", "position": [5, 9], "connects_to": "corridor_2"}
+	  ]
+	},
+	{
+	  "id": "end_room",
+	  "position": [1, 7],
+	  "size": [3, 5],
+	  "type": "treasure",
+	  "doors": [
+		{"direction": "E", "position": [3, 9], "connects_to": "corridor_2"}
+	  ],
+	  "items": [
+		{"type": "chest", "position": [2, 9]}
+	  ]
+	}
+  ],
+  "corridors": [
+	{
+	  "id": "corridor_1",
+	  "start": {"room": "start_room", "door_direction": "N"},
+	  "end": {"room": "middle_room", "door_direction": "S"},
+	  "waypoints": [[7, 11]]
+	},
+	{
+	  "id": "corridor_2",
+	  "start": {"room": "middle_room", "door_direction": "W"},
+	  "end": {"room": "end_room", "door_direction": "E"},
+	  "waypoints": [[4, 9]]
+	}
+  ],
+  "entities": [
+	{"type": "slime", "position": [2, 8], "room": "end_room", "health": 20}
+  ]
+}
