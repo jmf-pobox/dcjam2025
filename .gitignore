@@ -25,4 +25,4 @@ Thumbs.db
 *.blend2
 
 # Project specific
-builds/
+.vscode/
