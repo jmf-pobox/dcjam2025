@@ -55,5 +55,5 @@ static func generate_room(tilemap: TileMap):
 	return {
 		"width": ROOM_WIDTH * CELL_SIZE,
 		"height": ROOM_HEIGHT * CELL_SIZE,
-		"center": Vector2(ROOM_WIDTH * CELL_SIZE / 2, ROOM_HEIGHT * CELL_SIZE / 2)
+		"center": Vector2(float(ROOM_WIDTH * CELL_SIZE) / 2.0, float(ROOM_HEIGHT * CELL_SIZE) / 2.0)
 	}

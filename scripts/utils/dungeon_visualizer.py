@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 
-def visualize_dungeon(json_path):
+def visualize_dungeon(json_path: str) -> str:
     """
     Create an ASCII representation of a dungeon from its JSON definition.
     
@@ -120,7 +120,7 @@ def visualize_dungeon(json_path):
     
     return "\n".join(output)
 
-def main():
+def main() -> int:
     parser = argparse.ArgumentParser(description='Visualize a dungeon JSON file as ASCII art')
     parser.add_argument('json_file', help='Path to the dungeon JSON file')
     args = parser.parse_args()

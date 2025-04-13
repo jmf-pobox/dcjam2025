@@ -20,10 +20,47 @@ var music_player: AudioStreamPlayer
 var music_volume: float = 0.8  # Default 80%
 var sfx_volume: float = 0.7    # Default 70%
 
+# Store the previous scene when entering mini-game
+var previous_scene: String = ""
+var is_minigame_active: bool = false
+
 func _ready():
 	# Set up audio
 	_setup_audio()
 	load_game()
+
+func _input(event):
+	if event.is_action_pressed("play_minigame") and !is_minigame_active:
+		print("Mini-game key pressed, current scene: ", get_tree().current_scene.scene_file_path)
+		# Store current scene path before switching to mini-game
+		previous_scene = get_tree().current_scene.scene_file_path
+		is_minigame_active = true
+		# Get the current tree
+		var tree = get_tree()
+		# Pause the current scene
+		tree.paused = true
+		# Switch to chase mini-game
+		var result = get_tree().change_scene_to_file("res://scenes/minigames/chase/chase_game.tscn")
+		if result != OK:
+			print("Failed to switch to mini-game scene. Error code: ", result)
+		# Unpause after changing scene
+		tree.paused = false
+	elif event.is_action_pressed("pause") and is_minigame_active:
+		print("Returning to previous scene: ", previous_scene)
+		# If we're in the chase game and press pause, return to previous scene
+		is_minigame_active = false
+		var tree = get_tree()
+		tree.paused = true
+		if previous_scene != "":
+			var result = get_tree().change_scene_to_file(previous_scene)
+			if result != OK:
+				print("Failed to return to previous scene. Error code: ", result)
+		else:
+			# Fallback to main dungeon if no previous scene
+			var result = get_tree().change_scene_to_file("res://scenes/levels/fp_dungeon.tscn")
+			if result != OK:
+				print("Failed to switch to fallback scene. Error code: ", result)
+		tree.paused = false
 
 # Save game state to file
 func save_game():

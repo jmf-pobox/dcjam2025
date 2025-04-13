@@ -53,13 +53,13 @@ func _ready():
 	print(\"Dungeon loaded from JSON: \", DUNGEON_PATH)
 	print(\"Player positioned at: \", player.position, \" grid pos: \", player.grid_position)
 	
-	# Create some debug text that shows up in the game
-	var debug_3d = Label3D.new()
-	debug_3d.text = \"Dungeon loaded: Simple Three Room Path\\nRoom count: \" + str(dungeon_generator.rooms.size())
-	debug_3d.position = Vector3(10, 2, 10)
-	debug_3d.font_size = 24
-	debug_3d.modulate = Color(1, 0, 0) # Red text
-	add_child(debug_3d)
+	; # Create some debug text that shows up in the game
+	; var debug_3d = Label3D.new()
+	; debug_3d.text = \"Dungeon loaded: Simple Three Room Path\\nRoom count: \" + str(dungeon_generator.rooms.size())
+	; debug_3d.position = Vector3(10, 2, 10)
+	; debug_3d.font_size = 24
+	; debug_3d.modulate = Color(1, 0, 0) # Red text
+	; add_child(debug_3d)
 "
 
 [sub_resource type="GDScript" id="GDScript_debug"]
@@ -119,8 +119,9 @@ current = true
 fov = 70.0
 
 [node name="RayCast3D" type="RayCast3D" parent="Player"]
-target_position = Vector3(0, 0, -2)
+target_position = Vector3(0, 0, -3)
 collision_mask = 2
+debug_shape_custom_color = Color(1, 0, 0, 1)
 collide_with_areas = true
 debug_shape_thickness = 5
 

@@ -1,72 +1,89 @@
 {
-  "dungeon_name": "Simple Four Room Path",
-  "grid_size": [20, 20],
-  "cell_size": 2,
-  "rooms": [
-	{
-	  "id": "start_room",
-	  "position": [5, 12],
-	  "size": [5, 5],
-	  "type": "entrance",
-	  "doors": [
-		{"direction": "N", "position": [7, 12], "connects_to": "corridor_1"}
-	  ]
-	},
-	{
-	  "id": "middle_room",
-	  "position": [5, 7],
-	  "size": [5, 4],
-	  "type": "hallway",
-	  "doors": [
-		{"direction": "S", "position": [7, 10], "connects_to": "corridor_1"},
-		{"direction": "W", "position": [5, 9], "connects_to": "corridor_2"},
-		{"direction": "E", "position": [9, 9], "connects_to": "corridor_3"}
-	  ]
-	},
-	{
-	  "id": "end_room",
-	  "position": [1, 7],
-	  "size": [3, 5],
-	  "type": "treasure",
-	  "doors": [
-		{"direction": "E", "position": [3, 9], "connects_to": "corridor_2"}
-	  ],
-	  "items": [
-		{"type": "chest", "position": [2, 9]}
-	  ]
-	},
-	{
-	  "id": "boss_room",
-	  "position": [11, 7],
-	  "size": [6, 6],
-	  "type": "boss",
-	  "doors": [
-		{"direction": "W", "position": [11, 9], "connects_to": "corridor_3"}
-	  ]
-	}
-  ],
-  "corridors": [
-	{
-	  "id": "corridor_1",
-	  "start": {"room": "start_room", "door_direction": "N"},
-	  "end": {"room": "middle_room", "door_direction": "S"},
-	  "waypoints": [[7, 11]]
-	},
-	{
-	  "id": "corridor_2",
-	  "start": {"room": "middle_room", "door_direction": "W"},
-	  "end": {"room": "end_room", "door_direction": "E"},
-	  "waypoints": [[4, 9]]
-	},
-	{
-	  "id": "corridor_3",
-	  "start": {"room": "middle_room", "door_direction": "E"},
-	  "end": {"room": "boss_room", "door_direction": "W"},
-	  "waypoints": [[10, 9]]
-	}
-  ],
-  "entities": [
-	{"type": "slime", "position": [2, 8], "room": "end_room", "health": 20},
-	{"type": "slime", "position": [13, 9], "room": "boss_room", "health": 50, "is_boss": true}
-  ]
-}
+	"dungeon_name": "Map from PDF",
+	"grid_size": [20, 20],
+	"cell_size": 2,
+	"rooms": [
+	  {
+		"id": "entrance_room",
+		"position": [2, 15],
+		"size": [4, 4],
+		"type": "entrance",
+		"doors": [
+		  {"direction": "N", "position": [4, 15], "connects_to": "corridor_1"}
+		]
+	  },
+	  {
+		"id": "hallway_room",
+		"position": [2, 10],
+		"size": [6, 4],
+		"type": "hallway",
+		"doors": [
+		  {"direction": "S", "position": [4, 13], "connects_to": "corridor_1"},
+		  {"direction": "E", "position": [7, 12], "connects_to": "corridor_2"},
+		  {"direction": "N", "position": [4, 10], "connects_to": "corridor_3"}
+		]
+	  },
+	  {
+		"id": "treasure_room",
+		"position": [9, 10],
+		"size": [4, 4],
+		"type": "treasure",
+		"doors": [
+		  {"direction": "W", "position": [9, 12], "connects_to": "corridor_2"}
+		],
+		"items": [
+		  {"type": "chest", "position": [11, 12]}
+		]
+	  },
+	  {
+		"id": "puzzle_room",
+		"position": [2, 5],
+		"size": [5, 4],
+		"type": "hallway",
+		"doors": [
+		  {"direction": "S", "position": [4, 8], "connects_to": "corridor_3"},
+		  {"direction": "E", "position": [6, 7], "connects_to": "corridor_4"}
+		]
+	  },
+	  {
+		"id": "boss_room",
+		"position": [8, 5],
+		"size": [6, 6],
+		"type": "boss",
+		"doors": [
+		  {"direction": "W", "position": [8, 7], "connects_to": "corridor_4"}
+		]
+	  }
+	],
+	"corridors": [
+	  {
+		"id": "corridor_1",
+		"start": {"room": "entrance_room", "door_direction": "N"},
+		"end": {"room": "hallway_room", "door_direction": "S"},
+		"waypoints": [[4, 14]]
+	  },
+	  {
+		"id": "corridor_2",
+		"start": {"room": "hallway_room", "door_direction": "E"},
+		"end": {"room": "treasure_room", "door_direction": "W"},
+		"waypoints": [[8, 12]]
+	  },
+	  {
+		"id": "corridor_3",
+		"start": {"room": "hallway_room", "door_direction": "N"},
+		"end": {"room": "puzzle_room", "door_direction": "S"},
+		"waypoints": [[4, 9]]
+	  },
+	  {
+		"id": "corridor_4",
+		"start": {"room": "puzzle_room", "door_direction": "E"},
+		"end": {"room": "boss_room", "door_direction": "W"},
+		"waypoints": [[7, 7]]
+	  }
+	],
+	"entities": [
+	  {"type": "slime", "position": [10, 11], "room": "treasure_room", "health": 30},
+	  {"type": "slime", "position": [3, 6], "room": "puzzle_room", "health": 25},
+	  {"type": "slime", "position": [11, 8], "room": "boss_room", "health": 80, "is_boss": true}
+	]
+  }

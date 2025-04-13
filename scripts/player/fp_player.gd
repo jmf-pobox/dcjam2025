@@ -9,6 +9,8 @@ const ROTATION_SPEED = 5.0 # Rotations per second
 
 # Player properties
 const MAX_HEALTH = 100
+const ATTACK_DAMAGE = 25
+const ATTACK_COOLDOWN = 0.7
 
 # Player state
 var health = MAX_HEALTH
@@ -18,6 +20,7 @@ var target_position = Vector3.ZERO # Target world position
 var target_rotation = Vector3.ZERO # Target rotation
 var is_moving = false # Currently moving between grid cells
 var is_turning = false # Currently turning
+var can_attack = true # Attack cooldown state
 
 # Cardinal directions enum for clarity
 enum Cardinal { NORTH, EAST, SOUTH, WEST }
@@ -26,11 +29,16 @@ var current_action = Action.NONE
 
 # Node references
 @onready var camera = $Camera3D
+@onready var raycast = $RayCast3D
 
 # Debug properties
 var enable_debug_output = true
 
 func _ready():
+	# Add player to the "player" group for enemy detection
+	add_to_group("player")
+	print("Player added to 'player' group")
+	
 	# Initialize position to grid alignment
 	_update_grid_to_world_position()
 	position = target_position  # Set initial position to match target position
@@ -42,6 +50,9 @@ func _ready():
 	# Set camera parameters
 	camera.position.y = 0.6  # Eye level, adjusted higher
 	camera.rotation_degrees.x = -5  # Slight downward angle
+	
+	# Make sure raycast is enabled
+	raycast.enabled = true
 	
 	_debug_print("Player initialized at grid position: %s facing: %s" % [grid_position, _cardinal_to_string(facing_cardinal)])
 
@@ -55,6 +66,10 @@ func _process(delta):
 		_process_movement(delta)
 	elif is_turning:
 		_process_rotation(delta)
+		
+	# Check for attack input
+	if Input.is_action_just_pressed("attack") and can_attack:
+		_attack()
 
 func _process_movement(delta):
 	var distance_to_target = position.distance_to(target_position)
@@ -212,7 +227,7 @@ func _can_move_backward() -> bool:
 	return _is_valid_position(new_pos)
 
 func _is_valid_position(pos: Vector2i) -> bool:
-	"""Check if a grid position is valid for movement (has a floor or is a door)."""
+	"""Check if a grid position is valid for movement (has a floor or is a door, and no enemy is there)."""
 	# Get reference to the dungeon generator
 	var dungeon_scene = get_tree().current_scene
 	if not dungeon_scene:
@@ -260,6 +275,22 @@ func _is_valid_position(pos: Vector2i) -> bool:
 				
 				return true
 	
+	# Check if there's an enemy at this position
+	var entities_node = dungeon_scene.find_child("Entities", true, false)
+	if entities_node:
+		for enemy in entities_node.get_children():
+			if enemy.is_in_group("enemy") and enemy.state != "die":
+				# Convert enemy position to grid position
+				var enemy_grid_pos = Vector2i(
+					int(enemy.global_position.x / CELL_SIZE),
+					int(enemy.global_position.z / CELL_SIZE)
+				)
+				
+				# Check if enemy is at the position we want to move to
+				if enemy_grid_pos == pos:
+					_debug_print("Cannot move to position " + str(pos) + " because an enemy is there")
+					return false
+	
 	return is_walkable
 
 func _cardinal_to_string(dir: int) -> String:
@@ -279,6 +310,7 @@ func _debug_print(message: String) -> void:
 # Called when player takes damage
 func take_damage(amount):
 	health -= amount
+	print("Player took damage: ", amount, " health remaining: ", health)
 	if health <= 0:
 		health = 0
 		die()
@@ -291,3 +323,63 @@ func die():
 		game_manager.game_over()
 	else:
 		get_tree().change_scene_to_file("res://scenes/ui/game_over.tscn")
+
+func _attack():
+	can_attack = false
+	
+	print("Attack action triggered!")
+	
+	# Check if raycast is enabled
+	if not raycast.enabled:
+		print("RayCast3D is disabled!")
+		raycast.enabled = true
+	
+	# IMPORTANT: Don't override the raycast position here
+	# as it would counteract the node's position in the scene
+	
+	# Get all enemies in the scene
+	var entities_node = get_tree().current_scene.find_child("Entities", true, false)
+	if entities_node:
+		var closest_enemy = null
+		var closest_distance = 3.0  # Max attack range
+		
+		# Check each enemy for distance
+		for enemy in entities_node.get_children():
+			if enemy.is_in_group("enemy") and enemy.state != "die":
+				var distance = global_position.distance_to(enemy.global_position)
+				var forward = -global_transform.basis.z  # This is the player's forward direction
+				var to_enemy = (enemy.global_position - global_position).normalized()
+				
+				# Calculate dot product to see if enemy is in front of player
+				var dot_product = forward.dot(to_enemy)
+				
+				print("Enemy: ", enemy.name, " distance: ", distance, " dot: ", dot_product)
+				
+				# If enemy is in front of player (within ~60 degree cone) and closer than previous closest
+				if dot_product > 0.5 and distance < closest_distance:
+					closest_enemy = enemy
+					closest_distance = distance
+		
+		# Attack the closest enemy in front of player
+		if closest_enemy:
+			print("Attacking closest enemy: ", closest_enemy.name, " at distance: ", closest_distance)
+			closest_enemy.take_damage(ATTACK_DAMAGE)
+	else:
+		print("No entities node found in scene!")
+	
+	# Use a direct timer instead of get_tree().create_timer
+	var attack_timer = Timer.new()
+	attack_timer.wait_time = ATTACK_COOLDOWN
+	attack_timer.one_shot = true
+	attack_timer.autostart = false
+	add_child(attack_timer)
+	
+	# Connect the timeout signal
+	attack_timer.timeout.connect(func():
+		if is_instance_valid(self):
+			can_attack = true
+		attack_timer.queue_free()
+	)
+	
+	# Start the timer
+	attack_timer.start()

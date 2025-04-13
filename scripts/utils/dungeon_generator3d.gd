@@ -160,6 +160,9 @@ func build_dungeon() -> void:
 	# Add torches to walls
 	_add_torches_to_walls()
 	
+	# Spawn entities
+	_spawn_entities()
+	
 	print("Dungeon built with ", rooms.size(), " rooms and ", corridors.size(), " corridors")
 
 # Load a dungeon from JSON file
@@ -262,7 +265,7 @@ func _create_floor_and_ceiling() -> void:
 	# Create a floor mesh for each room instead of one big floor
 	for room_id in rooms:
 		var room = rooms[room_id]
-		var position = room["position"]
+		var room_position = room["position"]
 		var size = room["size"]
 		
 		var floor_mesh = PlaneMesh.new()
@@ -274,9 +277,9 @@ func _create_floor_and_ceiling() -> void:
 		
 		# Position floor at the center of the room, aligned with grid
 		floor_instance.position = Vector3(
-			(position.x + size.x / 2.0) * cell_size,
+			(room_position.x + size.x / 2.0) * cell_size,
 			0,
-			(position.y + size.y / 2.0) * cell_size
+			(room_position.y + size.y / 2.0) * cell_size
 		)
 		
 		# Use room-specific floor material if defined
@@ -298,9 +301,9 @@ func _create_floor_and_ceiling() -> void:
 		
 		# Position ceiling at the center of the room, at height
 		ceiling_instance.position = Vector3(
-			(position.x + size.x / 2.0) * cell_size,
+			(room_position.x + size.x / 2.0) * cell_size,
 			room_height * cell_size,
-			(position.y + size.y / 2.0) * cell_size
+			(room_position.y + size.y / 2.0) * cell_size
 		)
 		
 		# Flip ceiling to face downward
@@ -438,7 +441,7 @@ func _create_walls_from_grid() -> void:
 					)
 
 # Helper function to create a wall segment
-func _create_wall_segment(position: Vector3, orientation: String, length: float, 
+func _create_wall_segment(wall_position: Vector3, orientation: String, length: float, 
 						height: float, direction: String) -> void:
 	var wall = BoxMesh.new()
 	
@@ -449,11 +452,11 @@ func _create_wall_segment(position: Vector3, orientation: String, length: float,
 		wall.size = Vector3(WALL_THICKNESS, height, length)
 	
 	var wall_instance = MeshInstance3D.new()
-	wall_instance.name = "Wall_" + direction + "_" + str(position.x) + "_" + str(position.z)
+	wall_instance.name = "Wall_" + direction + "_" + str(wall_position.x) + "_" + str(wall_position.z)
 	wall_instance.mesh = wall
 	
 	# Position the wall - walls are now centered on grid boundaries
-	var wall_pos = position
+	var wall_pos = wall_position
 	wall_pos.y = height / 2  # Center vertically
 	
 	# These offsets are no longer needed as we're already positioning walls
@@ -481,8 +484,8 @@ func _create_wall_segment(position: Vector3, orientation: String, length: float,
 		var room_type = room["type"]
 		
 		# Check if wall position is within room bounds
-		var wall_grid_x = int(position.x / cell_size)
-		var wall_grid_y = int(position.z / cell_size)
+		var wall_grid_x = int(wall_position.x / cell_size)
+		var wall_grid_y = int(wall_position.z / cell_size)
 		
 		if wall_grid_x >= room_pos.x and wall_grid_x <= room_pos.x + room_size.x and \
 		   wall_grid_y >= room_pos.y and wall_grid_y <= room_pos.y + room_size.y:
@@ -741,7 +744,7 @@ func _is_door_position(pos: Vector2i, wall_dir: String, door_positions: Dictiona
 	return door_dir == wall_dir
 
 # Helper function to determine if a torch should be placed at a given location
-func _should_place_torch(x: int, y: int, torch_positions: Dictionary, spacing: int) -> bool:
+func _should_place_torch(x: int, y: int, torch_positions: Dictionary, _spacing: int) -> bool:
 	# Skip if we already have a torch at this position
 	if torch_positions.has(Vector2(x, y)):
 		return false
@@ -812,3 +815,44 @@ func _place_torch(torch_scene, parent_node: Node3D, grid_x: int, grid_y: int,
 	
 	# Add the torch to the parent node
 	parent_node.add_child(torch_instance)
+
+# Spawn all entities in the dungeon
+func _spawn_entities() -> void:
+	# Create a node to hold all entities
+	var entities_node = Node3D.new()
+	entities_node.name = "Entities"
+	dungeon_node.add_child(entities_node)
+	
+	# Load the enemy scene
+	var enemy_scene = load("res://scenes/enemies/slime_enemy_3d.tscn")
+	if not enemy_scene:
+		printerr("Failed to load enemy scene")
+		return
+	
+	# Spawn each entity
+	for entity_data in entities:
+		var entity_type = entity_data.get("type", "")
+		var entity_pos = entity_data.get("position", Vector2i.ZERO)
+		
+		# Convert grid position to world position
+		var world_pos = Vector3(
+			entity_pos.x * cell_size + cell_size / 2.0,
+			0.5,  # Slightly above floor
+			entity_pos.y * cell_size + cell_size / 2.0
+		)
+		
+		# Create the enemy instance
+		var enemy_instance = enemy_scene.instantiate()
+		enemy_instance.name = entity_type + "_" + str(entity_pos.x) + "_" + str(entity_pos.y)
+		enemy_instance.position = world_pos
+		
+		# Set enemy properties
+		if entity_data.has("health"):
+			enemy_instance.max_health = entity_data["health"]
+			enemy_instance.health = entity_data["health"]
+		
+		if entity_data.has("is_boss"):
+			enemy_instance.scale = Vector3(1.5, 1.5, 1.5)  # Make boss enemies larger
+		
+		entities_node.add_child(enemy_instance)
+		print("Spawned ", entity_type, " at ", world_pos)

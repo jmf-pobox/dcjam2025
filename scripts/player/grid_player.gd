@@ -26,7 +26,7 @@ var current_direction_enum = Direction.DOWN
 
 func _ready():
 	# Initialize position to grid alignment
-	position = position.snapped(Vector2(CELL_SIZE, CELL_SIZE)) + Vector2(CELL_SIZE/2, CELL_SIZE/2)
+	position = position.snapped(Vector2(CELL_SIZE, CELL_SIZE)) + Vector2(CELL_SIZE/2.0, CELL_SIZE/2.0)
 	target_position = position
 	grid_position = Vector2(round(position.x / CELL_SIZE), round(position.y / CELL_SIZE))
 	print("Player initialized at grid position: ", grid_position)
@@ -95,7 +95,7 @@ func _try_move(dir: Vector2):
 		# Update grid position
 		grid_position = new_grid_pos
 		# Set target position for smooth movement
-		target_position = Vector2(grid_position.x * CELL_SIZE, grid_position.y * CELL_SIZE) + Vector2(CELL_SIZE/2, CELL_SIZE/2)
+		target_position = Vector2(grid_position.x * CELL_SIZE, grid_position.y * CELL_SIZE) + Vector2(CELL_SIZE/2.0, CELL_SIZE/2.0)
 		
 		print("Moving to grid position: ", grid_position)
 

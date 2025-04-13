@@ -7,8 +7,8 @@ func _ready():
 	pass
 
 func _on_retry_button_pressed():
-	# Restart the game from the first level
-	get_tree().change_scene_to_file(\"res://scenes/levels/level_1.tscn\")
+	# Restart the game from the first-person dungeon
+	get_tree().change_scene_to_file(\"res://scenes/levels/fp_dungeon.tscn\")
 
 func _on_main_menu_button_pressed():
 	# Return to main menu

@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-class_name EnemyBase
+class_name ChaseEnemy
 
 const SPEED = 100.0
 
@@ -48,60 +48,36 @@ func _physics_process(_delta):
 				
 				# Apply movement
 				move_and_slide()
+				
+				# Check for collision with player
+				for i in get_slide_collision_count():
+					var collision = get_slide_collision(i)
+					var collider = collision.get_collider()
+					if collider.is_in_group("player"):
+						attack_player()
 			else:
-				# If player reference is lost, go back to idle state
 				state = "idle"
 				velocity = Vector2.ZERO
-		"attack":
-			if animation_player.has_animation("attack"):
-				animation_player.play("attack")
-			else:
-				state = "chase" # Fall back to chase state if attack animation missing
-		"hurt":
-			if animation_player.has_animation("hurt"):
-				animation_player.play("hurt")
-			else:
-				state = "chase" # Fall back to chase state if hurt animation missing
-		"die":
-			if animation_player.has_animation("die"):
-				animation_player.play("die")
-			else:
-				queue_free() # Just remove the enemy if die animation missing
 
 # Called when player enters detection radius
 func _on_detection_area_body_entered(body):
 	if body.is_in_group("player"):
 		player = body
 		state = "chase"
-		print("Player detected by enemy")
 
 # Called when player exits detection radius
 func _on_detection_area_body_exited(body):
 	if body.is_in_group("player"):
 		player = null
 		state = "idle"
-		print("Player left enemy detection area")
 
 # Called when enemy takes damage
 func take_damage(amount):
 	health -= amount
-	state = "hurt"
 	if health <= 0:
-		die()
-
-# Called when enemy dies
-func die():
-	state = "die"
-	# Wait for death animation to complete
-	await get_tree().create_timer(1.0).timeout
-	queue_free()
+		queue_free()
 
 # Called when enemy attacks player
 func attack_player():
-	if player and state == "chase":
-		var distance = global_position.distance_to(player.global_position)
-		if distance < 50:  # Attack range
-			state = "attack"
-			player.take_damage(damage)
-			await get_tree().create_timer(1.0).timeout
-			state = "chase"
+	if player:
+		player.take_damage(damage) 
