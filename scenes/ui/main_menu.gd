@@ -9,16 +9,6 @@ func _on_start_button_pressed() -> void:
 	# Start new game (first-person dungeon)
 	get_tree().change_scene_to_file("res://scenes/levels/fp_dungeon.tscn")
 
-func _on_load_button_pressed() -> void:
-	# Load saved game
-	var game_manager := get_node("/root/GameManager")
-	if game_manager and game_manager.load_game():
-		# Successfully loaded game, transition to the saved level
-		get_tree().change_scene_to_file("res://scenes/levels/" + game_manager.current_level + ".tscn")
-	else:
-		# Show error message or handle failed load
-		print("Failed to load saved game")
-
 func _on_options_button_pressed() -> void:
 	# Show options menu
 	var options_menu_resource := load("res://scenes/ui/options_menu.tscn")

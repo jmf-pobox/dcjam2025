@@ -165,49 +165,10 @@ func build_dungeon() -> void:
 	
 	print("Dungeon built with ", rooms.size(), " rooms and ", corridors.size(), " corridors")
 
-# Save dungeon state
-func save_state() -> void:
-	var game_manager = get_node("/root/GameManager")
-	if game_manager:
-		var state = {
-			"rooms": rooms,
-			"corridors": corridors,
-			"grid": grid,
-			"entities": entities
-		}
-		game_manager.update_dungeon_state(state, get_active_entities())
-
-# Load dungeon state
-func load_state() -> void:
-	var game_manager = get_node("/root/GameManager")
-	if game_manager and not game_manager.dungeon_data.is_empty():
-		rooms = game_manager.dungeon_data.get("rooms", {})
-		corridors = game_manager.dungeon_data.get("corridors", [])
-		grid = game_manager.dungeon_data.get("grid", {})
-		entities = game_manager.dungeon_data.get("entities", [])
-		
-		# Rebuild the dungeon with saved state
-		build_dungeon()
-		
-		# Restore active entities
-		for entity_data in game_manager.active_entities:
-			spawn_entity(
-				entity_data.get("type", ""),
-				Vector2i(entity_data.get("position", Vector2i.ZERO)),
-				entity_data
-			)
-
-# Get currently active entities
-func get_active_entities() -> Array:
-	var active = []
-	for entity in entities:
-		if entity.has("node") and is_instance_valid(entity.node):
-			active.append(entity)
-	return active
-
-# Load a dungeon from JSON file
+# Load dungeon from JSON file
 func load_from_json(file_path: String) -> bool:
-	var loader = load("res://scripts/utils/dungeon_loader.gd").new(self)
+	var loader_script = load("res://scripts/utils/dungeon_loader.gd")
+	var loader = loader_script.new(self)  # Pass self as the dungeon_generator
 	var dungeon_data = loader.load_dungeon(file_path)
 	
 	if dungeon_data.is_empty():

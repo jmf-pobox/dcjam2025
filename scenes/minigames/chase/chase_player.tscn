@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3 uid="uid://dqlloid8nj7y3"]
+[gd_scene load_steps=9 format=3 uid="uid://chaseplayer123456"]
 
 [ext_resource type="Script" path="res://scripts/minigames/chase/chase_player.gd" id="1_script"]
 

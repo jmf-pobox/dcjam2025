@@ -20,24 +20,6 @@ func _on_resume_button_pressed() -> void:
 	emit_signal("resume_game")
 	queue_free()
 
-func _on_save_button_pressed() -> void:
-	# Save player state
-	var player = get_tree().get_first_node_in_group("player")
-	if player and player.has_method("save_state"):
-		player.save_state()
-	
-	# Save dungeon state
-	var dungeon = get_tree().get_first_node_in_group("dungeon")
-	if dungeon and dungeon.has_method("save_state"):
-		dungeon.save_state()
-	
-	# Save game through GameManager
-	var game_manager := get_node("/root/GameManager")
-	if game_manager and game_manager.save_game():
-		print("Game saved successfully")
-	else:
-		print("Failed to save game")
-
 # Override the base menu's main menu button handler
 func _on_main_menu_button_pressed() -> void:
 	print("Main menu button pressed - transitioning to main menu")

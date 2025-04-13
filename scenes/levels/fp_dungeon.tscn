@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c32vkfmby6k3e" path="res://scripts/player/fp_player.gd" id="1_kgde3"]
 [ext_resource type="Script" uid="uid://iws0fijjw00g" path="res://scripts/utils/dungeon_generator3d.gd" id="2_dungeon"]
-[ext_resource type="Script" path="res://scripts/utils/debug_json_loader.gd" id="3_debug_json"]
+[ext_resource type="Script" uid="uid://bqikarw0euq15" path="res://scripts/utils/debug_json_loader.gd" id="3_debug_json"]
 
 [sub_resource type="GDScript" id="GDScript_level"]
 script/source = "extends Node3D
@@ -18,46 +18,36 @@ func _ready():
 	# Wait for dungeon generator to be ready
 	await get_tree().process_frame
 	
-	# Check if we're loading a saved game
-	var game_manager = get_node(\"/root/GameManager\")
-	var is_loading_save = game_manager and not game_manager.dungeon_data.is_empty()
+	# Load and generate the dungeon from JSON
+	var success = dungeon_generator.load_from_json(DUNGEON_PATH)
 	
-	if is_loading_save:
-		# Load saved dungeon state
-		dungeon_generator.load_state()
-		# Load saved player state
-		player.load_state()
-	else:
-		# Load and generate the dungeon from JSON
-		var success = dungeon_generator.load_from_json(DUNGEON_PATH)
-		
-		if not success:
-			printerr(\"Failed to load dungeon from: \", DUNGEON_PATH)
-			# Fall back to simple dungeon generation if JSON loading fails
-			dungeon_generator.initialize()
-			dungeon_generator.build_dungeon()
-		
-		# Find the entrance room from the dungeon data
-		var entrance_pos = Vector2i(3, 3)  # Default position if no entrance found
-		for room_id in dungeon_generator.rooms:
-			var room = dungeon_generator.rooms[room_id]
-			if room.type == \"entrance\":
-				# Position the player in the center of the entrance room
-				var pos = room.position
-				var size = room.size
-				entrance_pos = Vector2i(pos.x + size.x / 2, pos.y + size.y / 2)
-				break
-		
-		# Position the player at the entrance
-		player.grid_position = entrance_pos
-		player.position = Vector3(
-			player.grid_position.x * dungeon_generator.cell_size + dungeon_generator.cell_size / 2, 
-			0.5, 
-			player.grid_position.y * dungeon_generator.cell_size + dungeon_generator.cell_size / 2
-		)
+	if not success:
+		printerr(\"Failed to load dungeon from: \", DUNGEON_PATH)
+		# Fall back to simple dungeon generation if JSON loading fails
+		dungeon_generator.initialize()
+		dungeon_generator.build_dungeon()
+	
+	# Find the entrance room from the dungeon data
+	var entrance_pos = Vector2i(3, 3)  # Default position if no entrance found
+	for room_id in dungeon_generator.rooms:
+		var room = dungeon_generator.rooms[room_id]
+		if room.type == \"entrance\":
+			# Position the player in the center of the entrance room
+			var pos = room.position
+			var size = room.size
+			entrance_pos = Vector2i(pos.x + size.x / 2, pos.y + size.y / 2)
+			break
+	
+	# Position the player at the entrance
+	player.grid_position = entrance_pos
+	player.position = Vector3(
+		player.grid_position.x * dungeon_generator.cell_size + dungeon_generator.cell_size / 2, 
+		0.5, 
+		player.grid_position.y * dungeon_generator.cell_size + dungeon_generator.cell_size / 2
+	)
 	
 	# Debug info
-	print(\"Dungeon loaded: \", \"Save\" if is_loading_save else \"New\")
+	print(\"Dungeon loaded: New\")
 	print(\"Player positioned at: \", player.position, \" grid pos: \", player.grid_position)
 "
 
@@ -120,8 +110,8 @@ fov = 70.0
 [node name="RayCast3D" type="RayCast3D" parent="Player"]
 target_position = Vector3(0, 0, -3)
 collision_mask = 2
-debug_shape_custom_color = Color(1, 0, 0, 1)
 collide_with_areas = true
+debug_shape_custom_color = Color(1, 0, 0, 1)
 debug_shape_thickness = 5
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]

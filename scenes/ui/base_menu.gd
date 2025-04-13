@@ -11,23 +11,22 @@ func _ready() -> void:
 	pass
 
 func _on_back_button_pressed() -> void:
+	# Save settings before closing
+	GameManager.save_settings()
+	
 	emit_signal("menu_closed")
 	queue_free()
 
 func _on_main_menu_button_pressed() -> void:
-	# Save game if needed
-	var game_manager := get_node("/root/GameManager")
-	if game_manager:
-		game_manager.save_game()
+	# Save settings before returning to main menu
+	GameManager.save_settings()
 	
 	emit_signal("return_to_main_menu")
 	get_tree().change_scene_to_file("res://scenes/ui/main_menu.tscn")
 
 func _on_quit_button_pressed() -> void:
-	# Save game if needed
-	var game_manager := get_node("/root/GameManager")
-	if game_manager:
-		game_manager.save_game()
+	# Save settings before quitting
+	GameManager.save_settings()
 	
 	emit_signal("quit_game")
 	get_tree().quit()
