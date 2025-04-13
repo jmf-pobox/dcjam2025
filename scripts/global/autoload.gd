@@ -16,6 +16,9 @@ var player_health: int = 100
 var player_score: int = 0
 var player_inventory = []
 var player_max_health: int = 100
+var player_position: Vector3 = Vector3.ZERO
+var player_grid_position: Vector2i = Vector2i.ZERO
+var player_facing: int = 0  # Cardinal direction
 var music_player: AudioStreamPlayer
 var music_volume: float = 0.8  # Default 80%
 var sfx_volume: float = 0.7    # Default 70%
@@ -23,6 +26,10 @@ var sfx_volume: float = 0.7    # Default 70%
 # Store the previous scene when entering mini-game
 var previous_scene: String = ""
 var is_minigame_active: bool = false
+
+# Dungeon state
+var dungeon_data: Dictionary = {}
+var active_entities: Array = []
 
 func _ready():
 	# Set up audio
@@ -63,20 +70,37 @@ func _input(event):
 		tree.paused = false
 
 # Save game state to file
-func save_game():
+func save_game() -> bool:
 	var save_data = {
 		"current_level": current_level,
 		"player_health": player_health,
 		"player_score": player_score,
 		"player_max_health": player_max_health,
 		"player_inventory": player_inventory,
+		"player_position": {
+			"x": player_position.x,
+			"y": player_position.y,
+			"z": player_position.z
+		},
+		"player_grid_position": {
+			"x": player_grid_position.x,
+			"y": player_grid_position.y
+		},
+		"player_facing": player_facing,
 		"music_volume": music_volume,
-		"sfx_volume": sfx_volume
+		"sfx_volume": sfx_volume,
+		"dungeon_data": dungeon_data,
+		"active_entities": active_entities
 	}
 	
 	var save_file = FileAccess.open(SAVE_PATH, FileAccess.WRITE)
+	if save_file == null:
+		printerr("Failed to open save file for writing: ", FileAccess.get_open_error())
+		return false
+		
 	var json_string = JSON.stringify(save_data)
 	save_file.store_line(json_string)
+	return true
 
 # Set up audio system
 func _setup_audio():
@@ -139,28 +163,61 @@ func set_sfx_volume(percent: float):
 	_set_sfx_volume(volume)
 
 # Load game state from file
-func load_game():
-	if FileAccess.file_exists(SAVE_PATH):
-		var save_file = FileAccess.open(SAVE_PATH, FileAccess.READ)
-		var json_string = save_file.get_line()
+func load_game() -> bool:
+	if not FileAccess.file_exists(SAVE_PATH):
+		print("No save file found, starting new game")
+		return false
 		
-		var json = JSON.new()
-		var parse_result = json.parse(json_string)
+	var save_file = FileAccess.open(SAVE_PATH, FileAccess.READ)
+	if save_file == null:
+		printerr("Failed to open save file for reading: ", FileAccess.get_open_error())
+		return false
 		
-		if parse_result == OK:
-			var save_data = json.get_data()
-			
-			current_level = save_data["current_level"]
-			player_health = save_data["player_health"]
-			player_score = save_data["player_score"]
-			player_max_health = save_data["player_max_health"]
-			player_inventory = save_data["player_inventory"]
-			
-			# Load audio settings if available
-			if save_data.has("music_volume"):
-				set_music_volume(save_data["music_volume"] * 100)
-			if save_data.has("sfx_volume"):
-				set_sfx_volume(save_data["sfx_volume"] * 100)
+	var json_string = save_file.get_line()
+	var json = JSON.new()
+	var parse_result = json.parse(json_string)
+	
+	if parse_result != OK:
+		printerr("Failed to parse save file: ", json.get_error_message())
+		return false
+		
+	var save_data = json.get_data()
+	
+	# Load basic player stats
+	current_level = save_data.get("current_level", "level_1")
+	player_health = save_data.get("player_health", 100)
+	player_score = save_data.get("player_score", 0)
+	player_max_health = save_data.get("player_max_health", 100)
+	player_inventory = save_data.get("player_inventory", [])
+	
+	# Load player position
+	var pos_data = save_data.get("player_position", {})
+	player_position = Vector3(
+		pos_data.get("x", 0.0),
+		pos_data.get("y", 0.0),
+		pos_data.get("z", 0.0)
+	)
+	
+	# Load player grid position
+	var grid_pos_data = save_data.get("player_grid_position", {})
+	player_grid_position = Vector2i(
+		grid_pos_data.get("x", 0),
+		grid_pos_data.get("y", 0)
+	)
+	
+	player_facing = save_data.get("player_facing", 0)
+	
+	# Load audio settings
+	if save_data.has("music_volume"):
+		set_music_volume(save_data["music_volume"] * 100)
+	if save_data.has("sfx_volume"):
+		set_sfx_volume(save_data["sfx_volume"] * 100)
+	
+	# Load dungeon state
+	dungeon_data = save_data.get("dungeon_data", {})
+	active_entities = save_data.get("active_entities", [])
+	
+	return true
 
 # Change to a new level
 func change_level(level_name):
@@ -187,3 +244,20 @@ func update_health(new_health):
 	
 	if player_health <= 0:
 		game_over()
+
+# Update player position for saving
+func update_player_position(pos: Vector3, grid_pos: Vector2i, facing: int) -> void:
+	player_position = pos
+	player_grid_position = grid_pos
+	player_facing = facing
+
+# Update dungeon state for saving
+func update_dungeon_state(data: Dictionary, entities: Array) -> void:
+	dungeon_data = data
+	active_entities = entities
+
+# Helper function to convert linear volume to decibels
+func linear_to_db(linear: float) -> float:
+	if linear <= 0:
+		return -80.0  # Silence
+	return 20.0 * log(linear) / log(10.0)

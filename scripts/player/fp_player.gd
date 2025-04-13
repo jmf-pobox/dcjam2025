@@ -324,6 +324,31 @@ func die():
 	else:
 		get_tree().change_scene_to_file("res://scenes/ui/game_over.tscn")
 
+# Save player state
+func save_state() -> void:
+	var game_manager = get_node("/root/GameManager")
+	if game_manager:
+		game_manager.update_player_position(position, grid_position, facing_cardinal)
+
+# Load player state
+func load_state() -> void:
+	var game_manager = get_node("/root/GameManager")
+	if game_manager:
+		position = game_manager.player_position
+		grid_position = game_manager.player_grid_position
+		facing_cardinal = game_manager.player_facing
+		
+		# Update camera rotation based on facing direction
+		match facing_cardinal:
+			Cardinal.NORTH:
+				rotation.y = 0
+			Cardinal.EAST:
+				rotation.y = PI/2
+			Cardinal.SOUTH:
+				rotation.y = PI
+			Cardinal.WEST:
+				rotation.y = -PI/2
+
 func _attack():
 	can_attack = false
 	

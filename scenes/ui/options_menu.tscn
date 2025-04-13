@@ -1,5 +1,7 @@
 [gd_scene load_steps=4 format=3]
 
+[ext_resource type="Script" path="res://scenes/ui/options_menu.gd" id="1_1n6wr"]
+
 [sub_resource type="GDScript" id="GDScript_qbkl8"]
 script/source = "extends Control
 

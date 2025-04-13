@@ -18,48 +18,47 @@ func _ready():
 	# Wait for dungeon generator to be ready
 	await get_tree().process_frame
 	
-	# Load and generate the dungeon from JSON
-	var success = dungeon_generator.load_from_json(DUNGEON_PATH)
+	# Check if we're loading a saved game
+	var game_manager = get_node(\"/root/GameManager\")
+	var is_loading_save = game_manager and not game_manager.dungeon_data.is_empty()
 	
-	if not success:
-		printerr(\"Failed to load dungeon from: \", DUNGEON_PATH)
-		# Fall back to simple dungeon generation if JSON loading fails
-		dungeon_generator.initialize()
-		dungeon_generator.build_dungeon()
-	
-	# Add grid visualization for debugging (comment out in production)
-	# load(\"res://scripts/utils/dungeon_visualization.gd\").create_grid_visualization(self)
-	
-	# Find the entrance room from the dungeon data
-	var entrance_pos = Vector2i(3, 3)  # Default position if no entrance found
-	for room_id in dungeon_generator.rooms:
-		var room = dungeon_generator.rooms[room_id]
-		if room.type == \"entrance\":
-			# Position the player in the center of the entrance room
-			var pos = room.position
-			var size = room.size
-			entrance_pos = Vector2i(pos.x + size.x / 2, pos.y + size.y / 2)
-			break
-	
-	# Position the player at the entrance
-	player.grid_position = entrance_pos
-	player.position = Vector3(
-		player.grid_position.x * dungeon_generator.cell_size + dungeon_generator.cell_size / 2, 
-		0.5, 
-		player.grid_position.y * dungeon_generator.cell_size + dungeon_generator.cell_size / 2
-	)
+	if is_loading_save:
+		# Load saved dungeon state
+		dungeon_generator.load_state()
+		# Load saved player state
+		player.load_state()
+	else:
+		# Load and generate the dungeon from JSON
+		var success = dungeon_generator.load_from_json(DUNGEON_PATH)
+		
+		if not success:
+			printerr(\"Failed to load dungeon from: \", DUNGEON_PATH)
+			# Fall back to simple dungeon generation if JSON loading fails
+			dungeon_generator.initialize()
+			dungeon_generator.build_dungeon()
+		
+		# Find the entrance room from the dungeon data
+		var entrance_pos = Vector2i(3, 3)  # Default position if no entrance found
+		for room_id in dungeon_generator.rooms:
+			var room = dungeon_generator.rooms[room_id]
+			if room.type == \"entrance\":
+				# Position the player in the center of the entrance room
+				var pos = room.position
+				var size = room.size
+				entrance_pos = Vector2i(pos.x + size.x / 2, pos.y + size.y / 2)
+				break
+		
+		# Position the player at the entrance
+		player.grid_position = entrance_pos
+		player.position = Vector3(
+			player.grid_position.x * dungeon_generator.cell_size + dungeon_generator.cell_size / 2, 
+			0.5, 
+			player.grid_position.y * dungeon_generator.cell_size + dungeon_generator.cell_size / 2
+		)
 	
 	# Debug info
-	print(\"Dungeon loaded from JSON: \", DUNGEON_PATH)
+	print(\"Dungeon loaded: \", \"Save\" if is_loading_save else \"New\")
 	print(\"Player positioned at: \", player.position, \" grid pos: \", player.grid_position)
-	
-	; # Create some debug text that shows up in the game
-	; var debug_3d = Label3D.new()
-	; debug_3d.text = \"Dungeon loaded: Simple Three Room Path\\nRoom count: \" + str(dungeon_generator.rooms.size())
-	; debug_3d.position = Vector3(10, 2, 10)
-	; debug_3d.font_size = 24
-	; debug_3d.modulate = Color(1, 0, 0) # Red text
-	; add_child(debug_3d)
 "
 
 [sub_resource type="GDScript" id="GDScript_debug"]
