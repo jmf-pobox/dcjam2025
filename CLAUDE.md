@@ -11,8 +11,12 @@ GitHub Repository: https://github.com/jmf-pobox/dcjam2025
 - The main scene is `res://scenes/ui/main_menu.tscn`
 - Launch game from the Godot editor with F5
 - Run `dungeon_visualizer.py` to create ASCII visualizations of dungeon layouts
+  - Usage: `python dungeon_visualizer.py --dungeon path/to/dungeon.json --output path/to/output.txt`
+  - Optional: `--show-legend` to include legend in output
+  - Optional: `--show-coordinates` to show grid coordinates
 
 ### Recent Features
+- Python-based dungeon visualization system with ASCII art output
 - Animated torch system with dynamic lighting
 - Room-specific textures and materials
 - JSON-based dungeon layout system
@@ -50,6 +54,15 @@ GitHub Repository: https://github.com/jmf-pobox/dcjam2025
   - Manages flickering light effect
   - Configures light properties based on room type
 
+#### Python Visualization System
+- `dungeon_visualizer.py` - Dungeon visualization tool
+  - Converts JSON dungeon layouts to ASCII art
+  - Supports different room types and entities
+  - Generates coordinate-based grid output
+  - Includes optional legend and coordinate display
+  - Uses type hints and follows PEP 8 standards
+  - Implements proper error handling and logging
+
 #### Key Scenes
 - `scenes/levels/fp_dungeon.tscn` - First-person dungeon level
   - Main 3D gameplay environment
@@ -83,6 +96,13 @@ GitHub Repository: https://github.com/jmf-pobox/dcjam2025
 - Group code by functionality with clear comments
 - Signal names should be verbs in past tense (e.g., `health_changed`)
 - Use `$NodePath` notation for accessing nodes within the same scene
+- For Python code:
+  - Use type hints and PEP 695 syntax for generics
+  - Use `__new__` instead of `__init__` for object instantiation
+  - Use `__slots__` for variable declarations
+  - Follow PEP 8 coding standards
+  - Include appropriate comments
+  - Do not use type ignore hints
 
 ### Architecture Notes
 - First-person perspective with grid-based movement (90-degree turns only)
@@ -128,3 +148,15 @@ Note: The controls were inverted to match user expectations, so the actual movem
 - Hallway rooms: Alternate floor, standard walls
 - Treasure rooms: Alternate floor, alternate walls
 - Boss rooms: Special boss floor, special boss walls with reddish lighting
+
+### ASCII Visualization Symbols
+- `#` - Wall
+- `.` - Floor
+- `D` - Door
+- `T` - Torch
+- `E` - Enemy
+- `C` - Chest
+- `S` - Start position
+- `B` - Boss
+- `+` - Corridor
+- ` ` (space) - Empty space

@@ -27,7 +27,7 @@ func _ready():
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	
 	# Configure sprite to use spritesheet
-	var sprite_region = Rect2(0, 0, sprite.texture.get_width() / sprite_frames, sprite.texture.get_height())
+	var sprite_region = Rect2(0, 0, sprite.texture.get_width() / float(sprite_frames), sprite.texture.get_height())
 	sprite.region_enabled = true
 	sprite.region_rect = sprite_region
 	
@@ -53,7 +53,7 @@ func _process(delta):
 		current_frame = (current_frame + 1) % sprite_frames
 		
 		# Update sprite region to show correct frame
-		var frame_width = sprite.texture.get_width() / sprite_frames
+		var frame_width = sprite.texture.get_width() / float(sprite_frames)
 		sprite.region_rect = Rect2(current_frame * frame_width, 0, frame_width, sprite.texture.get_height())
 	
 	# Add flicker effect to light

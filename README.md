@@ -20,7 +20,6 @@ This is a first-person, grid-based dungeon crawler where the player navigates th
 - Collectible items and equipment
 - Simple inventory system
 - Background music with volume controls
-- 2D Chase minigame (press 'g' to play)
 
 ## Controls
 
@@ -32,11 +31,6 @@ This is a first-person, grid-based dungeon crawler where the player navigates th
 - Left Mouse Button: Attack
 - E: Interact with objects/items
 - ESC: Pause game
-- G: Launch Chase minigame
-
-### Chase Minigame
-- Arrow Keys: Move the player character
-- ESC: Return to main dungeon
 
 Note: The main game controls have been adjusted to match user expectations.
 
@@ -48,7 +42,6 @@ Note: The main game controls have been adjusted to match user expectations.
 - Taller walls for a more spacious dungeon feel
 - JSON-based dungeon definition for easy level creation
 - Audio system with background music and volume controls
-- 2D Chase minigame with enemy AI and level design
 
 ## Getting Started
 
@@ -72,8 +65,6 @@ Note: The main game controls have been adjusted to match user expectations.
   - `levels/`: Game level scenes
   - `objects/`: Objects like torches, doors, etc.
   - `ui/`: User interface scenes
-  - `minigames/`: Minigame scenes
-    - `chase/`: Chase minigame components
 - `scripts/`: Contains all GDScript files
   - `player/`: Player-related scripts
   - `enemies/`: Enemy-related scripts
@@ -81,13 +72,11 @@ Note: The main game controls have been adjusted to match user expectations.
   - `global/`: Global singleton scripts
   - `objects/`: Object behavior scripts
   - `utils/`: Utility scripts including dungeon generation
-  - `minigames/`: Minigame scripts
-    - `chase/`: Chase minigame scripts
 
 ### Key Files and Their Functions
 
 #### Core Game Scripts
-- `scripts/global/autoload.gd`: The game manager singleton that handles global state, audio, game flow, and minigame transitions
+- `scripts/global/autoload.gd`: The game manager singleton that handles global state, audio, and game flow
 - `scripts/player/fp_player.gd`: First-person player controller with grid-based movement and rotation
 - `scripts/utils/dungeon_generator3d.gd`: 3D dungeon generation from grid data, including walls, floors, and torches
 - `scripts/utils/dungeon_loader.gd`: Loads and parses JSON dungeon definitions
@@ -97,28 +86,6 @@ Note: The main game controls have been adjusted to match user expectations.
 - `scenes/levels/fp_dungeon.tscn`: Main 3D dungeon level scene
 - `scenes/ui/main_menu.tscn`: Game start menu with options
 - `scenes/objects/torch.tscn`: Animated torch object that provides light
-
-### Chase Minigame
-
-The game includes a 2D chase minigame that can be accessed by pressing the 'g' key while in the main dungeon. This minigame provides a different gameplay experience from the main dungeon crawler.
-
-#### Minigame Structure
-- `scenes/minigames/chase/chase_game.tscn`: Main minigame scene that contains:
-  - Player character
-  - Enemy slimes
-  - Exit area
-  - Game logic and pause handling
-
-#### Minigame Components
-- `scenes/minigames/chase/chase_player.tscn`: Player character scene
-- `scenes/minigames/chase/chase_slime.tscn`: Enemy slime scene
-- `scripts/minigames/chase/chase_player.gd`: Player movement and interaction logic
-- `scripts/minigames/chase/chase_enemy.gd`: Enemy AI and behavior logic
-
-#### Minigame Objective
-- Navigate through the level while avoiding enemy slimes
-- Reach the exit area to return to the main dungeon
-- Can also press ESC at any time to return to the main dungeon
 
 #### Resource Files
 - `resources/dungeons/level_1.json`: JSON definition of the first level's layout
@@ -144,12 +111,6 @@ The game includes a 2D chase minigame that can be accessed by pressing the 'g' k
 ### To Modify Game Audio
 1. Replace audio files in the `assets/audio/` directory
 2. Edit `scripts/global/autoload.gd` to adjust audio settings and playback
-
-### To Modify the Chase Minigame
-1. Edit `scenes/minigames/chase/chase_game.tscn` to modify level layout
-2. Adjust player movement in `scripts/minigames/chase/chase_player.gd`
-3. Modify enemy behavior in `scripts/minigames/chase/chase_enemy.gd`
-4. Update minigame transition logic in `scripts/global/autoload.gd`
 
 ## License
 

@@ -23,47 +23,10 @@ var music_player: AudioStreamPlayer
 var music_volume: float = 0.8  # Default 80%
 var sfx_volume: float = 0.7    # Default 70%
 
-# Store the previous scene when entering mini-game
-var previous_scene: String = ""
-var is_minigame_active: bool = false
-
 func _ready():
 	# Set up audio
 	_setup_audio()
 	load_settings()
-
-func _input(event):
-	if event.is_action_pressed("play_minigame") and !is_minigame_active:
-		print("Mini-game key pressed, current scene: ", get_tree().current_scene.scene_file_path)
-		# Store current scene path before switching to mini-game
-		previous_scene = get_tree().current_scene.scene_file_path
-		is_minigame_active = true
-		# Get the current tree
-		var tree = get_tree()
-		# Pause the current scene
-		tree.paused = true
-		# Switch to chase mini-game
-		var result = get_tree().change_scene_to_file("res://scenes/minigames/chase/chase_game.tscn")
-		if result != OK:
-			print("Failed to switch to mini-game scene. Error code: ", result)
-		# Unpause after changing scene
-		tree.paused = false
-	elif event.is_action_pressed("pause") and is_minigame_active:
-		print("Returning to previous scene: ", previous_scene)
-		# If we're in the chase game and press pause, return to previous scene
-		is_minigame_active = false
-		var tree = get_tree()
-		tree.paused = true
-		if previous_scene != "":
-			var result = get_tree().change_scene_to_file(previous_scene)
-			if result != OK:
-				print("Failed to return to previous scene. Error code: ", result)
-		else:
-			# Fallback to main dungeon if no previous scene
-			var result = get_tree().change_scene_to_file("res://scenes/levels/fp_dungeon.tscn")
-			if result != OK:
-				print("Failed to switch to fallback scene. Error code: ", result)
-		tree.paused = false
 
 # Save settings to file
 func save_settings() -> bool:
@@ -131,75 +94,55 @@ func _set_sfx_volume(value: float):
 		AudioServer.set_bus_volume_db(SFX_BUS_IDX, linear_to_db(value))
 
 # Public volume control API
-func set_music_volume(percent: float):
-	# Convert from percentage (0-100) to linear scale (0-1)
-	var volume = percent / 100.0
-	_set_music_volume(volume)
+func set_music_volume(value: float):
+	_set_music_volume(value)
 	save_settings()
 
-func set_sfx_volume(percent: float):
-	# Convert from percentage (0-100) to linear scale (0-1)
-	var volume = percent / 100.0
-	_set_sfx_volume(volume)
+func set_sfx_volume(value: float):
+	_set_sfx_volume(value)
 	save_settings()
 
 # Load settings from file
-func load_settings() -> bool:
-	if not FileAccess.file_exists(SAVE_PATH):
-		print("No settings file found, using defaults")
-		return false
+func load_settings():
+	if FileAccess.file_exists(SAVE_PATH):
+		var save_file = FileAccess.open(SAVE_PATH, FileAccess.READ)
+		if save_file == null:
+			printerr("Failed to open settings file for reading: ", FileAccess.get_open_error())
+			return
+			
+		var json_string = save_file.get_line()
+		var json = JSON.new()
+		var parse_result = json.parse(json_string)
 		
-	var save_file = FileAccess.open(SAVE_PATH, FileAccess.READ)
-	if save_file == null:
-		printerr("Failed to open settings file for reading: ", FileAccess.get_open_error())
-		return false
-		
-	var json_string = save_file.get_line()
-	var json = JSON.new()
-	var parse_result = json.parse(json_string)
-	
-	if parse_result != OK:
-		printerr("Failed to parse settings file: ", json.get_error_message())
-		return false
-		
-	var save_data = json.get_data()
-	
-	# Load audio settings
-	if save_data.has("music_volume"):
-		set_music_volume(save_data["music_volume"] * 100)
-	if save_data.has("sfx_volume"):
-		set_sfx_volume(save_data["sfx_volume"] * 100)
-	
-	return true
-
-# Change to a new level
-func change_level(level_name):
-	current_level = level_name
-	get_tree().change_scene_to_file("res://scenes/levels/" + level_name + ".tscn")
-
-# Game over function
-func game_over():
-	get_tree().change_scene_to_file("res://scenes/ui/game_over.tscn")
-
-# Add item to player inventory
-func add_item_to_inventory(item):
-	player_inventory.append(item)
-
-# Update player score
-func update_score(points):
-	player_score += points
-	emit_signal("score_changed", player_score)
-
-# Update player health
-func update_health(new_health):
-	player_health = new_health
-	emit_signal("health_changed", player_health)
-	
-	if player_health <= 0:
-		game_over()
+		if parse_result == OK:
+			var save_data = json.get_data()
+			_set_music_volume(save_data["music_volume"])
+			_set_sfx_volume(save_data["sfx_volume"])
 
 # Helper function to convert linear volume to decibels
 func linear_to_db(linear: float) -> float:
 	if linear <= 0:
 		return -80.0  # Silence
 	return 20.0 * log(linear) / log(10.0)
+
+# Game management functions
+func change_level(level_name: String) -> void:
+	current_level = level_name
+	get_tree().change_scene_to_file("res://scenes/levels/" + level_name + ".tscn")
+
+func game_over() -> void:
+	get_tree().change_scene_to_file("res://scenes/ui/game_over.tscn")
+
+func add_item_to_inventory(item: Variant) -> void:
+	player_inventory.append(item)
+
+func update_score(points: int) -> void:
+	player_score += points
+	emit_signal("score_changed", player_score)
+
+func update_health(new_health: int) -> void:
+	player_health = new_health
+	emit_signal("health_changed", player_health)
+	
+	if player_health <= 0:
+		game_over()

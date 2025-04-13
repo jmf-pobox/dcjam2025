@@ -11,7 +11,7 @@ func _ready() -> void:
 
 func _on_back_button_pressed() -> void:
 	# Save settings before closing
-	GameManager.save_settings()@
+	GameManager.save_settings()
 	
 	emit_signal("options_closed")
 	queue_free() 

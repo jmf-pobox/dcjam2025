@@ -136,16 +136,16 @@ func _physics_process(delta):
 						velocity = Vector3.ZERO
 				
 				# Check if we can attack the player
-				var distance_to_player = global_position.distance_to(player.global_position)
+				var _distance_to_player = global_position.distance_to(player.global_position)
 				
 				# Calculate player's grid position
-				var player_grid_pos = Vector2i(
+				var player_current_grid_pos = Vector2i(
 					int(player.global_position.x / cell_size),
 					int(player.global_position.z / cell_size)
 				)
 				
 				# Check if we're adjacent to the player (in grid terms)
-				var grid_distance = abs(current_grid_position.x - player_grid_pos.x) + abs(current_grid_position.y - player_grid_pos.y)
+				var grid_distance = abs(current_grid_position.x - player_current_grid_pos.x) + abs(current_grid_position.y - player_current_grid_pos.y)
 				
 				if grid_distance <= 1 and can_attack:
 					print("Adjacent to player! Attacking")
