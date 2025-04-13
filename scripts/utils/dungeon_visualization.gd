@@ -13,9 +13,9 @@ static func create_grid_visualization(parent_node: Node3D) -> void:
 	vis_node.name = "GridVis_Parent"
 	parent_node.add_child(vis_node)
 	
-	var cell_size = DungeonGenerator3D.CELL_SIZE
-	var room_width = DungeonGenerator3D.ROOM_WIDTH
-	var room_depth = DungeonGenerator3D.ROOM_DEPTH
+	var cell_size = DungeonGenerator3D.DEFAULT_CELL_SIZE
+	var room_width = DungeonGenerator3D.DEFAULT_GRID_WIDTH
+	var room_depth = DungeonGenerator3D.DEFAULT_GRID_HEIGHT
 	
 	# Create grid lines
 	for x in range(room_width + 1):
